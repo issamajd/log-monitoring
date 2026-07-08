@@ -1,0 +1,36 @@
+# Base Docker Compose configuration for Proactive Log Monitoring System
+# This defines common networks and volumes used across all services
+
+version: '3.8'
+
+networks:
+  monitoring-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
+
+volumes:
+  # Kafka volumes
+  kafka-data:
+    driver: local
+  zookeeper-data:
+    driver: local
+  zookeeper-logs:
+    driver: local
+
+  # Database volumes
+  timescaledb-data:
+    driver: local
+  elasticsearch-data:
+    driver: local
+
+  # Grafana volumes
+  grafana-data:
+    driver: local
+  grafana-provisioning:
+    driver: local
+
+  # OTel Collector checkpoint
+  otel-checkpoint:
+    driver: local

@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Milestone 1 - Support Triage Foundation</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <a class="brand" href="index.html">
+        <strong>Log Monitoring Plan</strong>
+        <span>Support-first observability for on-prem Windows deployments</span>
+      </a>
+      <nav class="nav">
+        <a href="index.html">Overview</a>
+        <a class="active" href="milestone-1.html">Milestone 1</a>
+        <a href="architecture.html">Architecture</a>
+        <a href="deployment-sizing.html">Deployment &amp; sizing</a>
+        <a href="support-workflows.html">Support workflows</a>
+        <a href="data-security.html">Data &amp; security</a>
+        <a href="roadmap.html">Roadmap</a>
+      </nav>
+    </aside>
+
+    <main class="content">
+      <header class="page-header">
+        <div class="eyebrow">First usable release</div>
+        <h1>Milestone 1: Support Triage Foundation</h1>
+        <p class="lead">Milestone 1 should prove that support can investigate real customer issues without opening massive raw log files. It combines existing `SystemTrace_*.log` ingestion with OpenTelemetry from application code.</p>
+        <div class="meta">
+          <span class="pill">Primary outcome: fast support investigation</span>
+          <span class="pill">Includes basic alerts</span>
+          <span class="pill">Kafka planned next</span>
+        </div>
+      </header>
+
+      <section class="grid two">
+        <article class="panel status">
+          <h2>Goals</h2>
+          <ul>
+            <li>Search errors by time window, session, operation, BP, DQ, SQL, and component.</li>
+            <li>Find slow API, BP, DQ, SQL, and background service operations.</li>
+            <li>Flag dangerous SQL/data-change patterns.</li>
+            <li>Show Windows service and server health beside application signals.</li>
+            <li>Run on the app server or a separate monitoring server.</li>
+            <li>Support online and offline installation modes.</li>
+          </ul>
+        </article>
+
+        <article class="panel status amber">
+          <h2>Non-goals</h2>
+          <ul>
+            <li>No AI/ML anomaly detection yet.</li>
+            <li>No clustered/high-availability deployment yet.</li>
+            <li>No custom alert manager yet.</li>
+            <li>No deep SQL Server performance monitoring yet.</li>
+            <li>No multi-customer central SaaS assumption.</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="panel">
+        <h2>Scope</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Area</th>
+                <th>Milestone 1 decision</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Telemetry sources</td>
+                <td>Existing `SystemTrace_*.log` files plus OpenTelemetry emitted from app code.</td>
+              </tr>
+              <tr>
+                <td>Instrumentation layers</td>
+                <td>API entry points, Windows service jobs, business process calls, data query calls, SQL execution, errors, and key timings.</td>
+              </tr>
+              <tr>
+                <td>Storage/search</td>
+                <td>Elasticsearch for searchable logs/events; TimescaleDB for metrics and time-series summaries; Grafana for dashboards and alerts.</td>
+              </tr>
+              <tr>
+                <td>Retention</td>
+                <td>14-30 days searchable in Elasticsearch, with older raw files archived separately if needed.</td>
+              </tr>
+              <tr>
+                <td>SQL handling</td>
+                <td>Store full SQL text, redact parameter values and secrets, extract operation/table/duration/rows fields.</td>
+              </tr>
+              <tr>
+                <td>Enrichment</td>
+                <td>Read-only SQL Server connector resolves `SessionID` to safe support context when configured.</td>
+              </tr>
+              <tr>
+                <td>Notifications</td>
+                <td>Grafana alert state, email, and optional webhook support for Teams, Slack, or custom integrations.</td>
+              </tr>
+              <tr>
+                <td>Forwarding</td>
+                <td>Local-first. Optional redacted forwarding only when needed and approved.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="grid two">
+        <article class="panel">
+          <h2>Workstreams</h2>
+          <ol>
+            <li>Define the parsed log schema for `SystemTrace_*.log`.</li>
+            <li>Build or adapt a log tail/parser service for Windows paths.</li>
+            <li>Add OpenTelemetry instrumentation package/adapters to the app.</li>
+            <li>Configure OTel Collector, Elasticsearch, TimescaleDB, and Grafana through Docker Compose.</li>
+            <li>Create redaction and enrichment pipeline.</li>
+            <li>Create support-first dashboards and search views.</li>
+            <li>Add basic alerts and notification channels.</li>
+            <li>Package online and offline installation flows.</li>
+          </ol>
+        </article>
+
+        <article class="panel">
+          <h2>Default thresholds</h2>
+          <p>Thresholds must be configurable per customer, module, endpoint, BP, DQ, SQL table, job, and environment.</p>
+          <ul>
+            <li>API/BP warning default: over 3 seconds.</li>
+            <li>API/BP critical default: over 10 seconds.</li>
+            <li>SQL warning default: over 1 second.</li>
+            <li>SQL critical default: over 5 seconds.</li>
+            <li>Dangerous data-change alerts use SQL operation, table, WHERE detection, and rows affected.</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="panel">
+        <h2>Success criteria</h2>
+        <ul>
+          <li>Support can answer "what failed around this time?" in under 5 minutes.</li>
+          <li>Support can search by `SessionID`, `OperationID`, BP/DQ name, SQL operation, component, and time window.</li>
+          <li>Slow operations are visible without reading raw log files.</li>
+          <li>Dangerous SQL/data-change events are flagged with clear reasons.</li>
+          <li>Monitoring stack health is visible, including ingestion stopped and disk almost full.</li>
+          <li>Installation works on the same app server and on a separate monitoring server.</li>
+          <li>Full SQL text is retained while parameters, passwords, and tokens are redacted.</li>
+        </ul>
+      </section>
+
+      <nav class="footer-nav">
+        <a href="index.html">Previous: Overview</a>
+        <a href="architecture.html">Next: Architecture</a>
+      </nav>
+    </main>
+  </div>
+</body>
+</html>

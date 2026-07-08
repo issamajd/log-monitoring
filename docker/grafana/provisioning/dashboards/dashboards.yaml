@@ -1,0 +1,14 @@
+# Grafana dashboards provisioning
+apiVersion: 1
+
+providers:
+  - name: 'Log Monitoring Dashboards'
+    orgId: 1
+    folder: 'Log Monitoring'
+    folderUid: 'log-monitoring'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards/json

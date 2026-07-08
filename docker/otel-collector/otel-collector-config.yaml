@@ -1,0 +1,180 @@
+# OpenTelemetry Collector Configuration
+# Receives telemetry from .NET apps and Telegraf, exports to Kafka
+
+receivers:
+  # Receive OTLP data from .NET applications
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+  # Scrape Prometheus metrics from Telegraf
+  prometheus:
+    config:
+      scrape_configs:
+        - job_name: 'telegraf'
+          scrape_interval: 10s
+          static_configs:
+            - targets: ['telegraf:9273']
+          metric_relabel_configs:
+            - source_labels: [__name__]
+              regex: 'go_.*'
+              action: drop
+
+  # Health check endpoint
+  hostmetrics:
+    collection_interval: 30s
+    scrapers:
+      cpu:
+        metrics:
+          system.cpu.utilization:
+            enabled: true
+      memory:
+        metrics:
+          system.memory.utilization:
+            enabled: true
+      disk:
+      network:
+
+processors:
+  # Batch telemetry for efficiency
+  batch:
+    timeout: 1s
+    send_batch_size: 1024
+    send_batch_max_size: 2048
+
+  # Add resource attributes
+  resource:
+    attributes:
+      - key: deployment.environment
+        value: ${DEPLOYMENT_ENV:-development}
+        action: upsert
+      - key: service.namespace
+        value: ${SERVICE_NAMESPACE:-log-monitoring}
+        action: upsert
+
+  # Memory limiter to prevent OOM
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 512
+    spike_limit_mib: 128
+
+  # Filter out noisy/unwanted telemetry
+  filter/logs:
+    logs:
+      exclude:
+        match_type: regexp
+        bodies:
+          - "health.*check"
+          - "readiness.*probe"
+          - "liveness.*probe"
+
+  # Transform/enrich attributes
+  attributes/logs:
+    actions:
+      - key: log.pipeline.source
+        value: otel-collector
+        action: upsert
+
+  attributes/metrics:
+    actions:
+      - key: metrics.pipeline.source
+        value: otel-collector
+        action: upsert
+
+  attributes/traces:
+    actions:
+      - key: traces.pipeline.source
+        value: otel-collector
+        action: upsert
+
+exporters:
+  # Export metrics to Kafka
+  kafka/metrics:
+    brokers:
+      - kafka:9092
+    topic: telemetry-metrics
+    encoding: otlp_proto
+    producer:
+      max_message_bytes: 1000000
+      required_acks: 1
+      compression: snappy
+
+  # Export logs to Kafka
+  kafka/logs:
+    brokers:
+      - kafka:9092
+    topic: telemetry-logs
+    encoding: otlp_proto
+    producer:
+      max_message_bytes: 1000000
+      required_acks: 1
+      compression: snappy
+
+  # Export traces to Kafka
+  kafka/traces:
+    brokers:
+      - kafka:9092
+    topic: telemetry-traces
+    encoding: otlp_proto
+    producer:
+      max_message_bytes: 1000000
+      required_acks: 1
+      compression: snappy
+
+  # Debug logging (disable in production)
+  debug:
+    verbosity: basic
+    sampling_initial: 5
+    sampling_thereafter: 200
+
+  # Prometheus exporter for self-monitoring
+  prometheus:
+    endpoint: 0.0.0.0:8889
+    namespace: otelcol
+
+extensions:
+  # Health check extension
+  health_check:
+    endpoint: 0.0.0.0:13133
+    path: /health
+
+  # Performance profiler
+  pprof:
+    endpoint: 0.0.0.0:1777
+
+  # zPages for debugging
+  zpages:
+    endpoint: 0.0.0.0:55679
+
+service:
+  extensions: [health_check, pprof, zpages]
+  
+  pipelines:
+    # Metrics pipeline
+    metrics:
+      receivers: [otlp, prometheus, hostmetrics]
+      processors: [memory_limiter, batch, resource, attributes/metrics]
+      exporters: [kafka/metrics, debug]
+
+    # Logs pipeline
+    logs:
+      receivers: [otlp]
+      processors: [memory_limiter, filter/logs, batch, resource, attributes/logs]
+      exporters: [kafka/logs, debug]
+
+    # Traces pipeline
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, batch, resource, attributes/traces]
+      exporters: [kafka/traces, debug]
+
+  telemetry:
+    logs:
+      level: info
+      encoding: json
+    metrics:
+      level: detailed
+      address: 0.0.0.0:8888

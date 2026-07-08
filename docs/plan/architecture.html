@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Architecture - Log Monitoring Plan</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <a class="brand" href="index.html">
+        <strong>Log Monitoring Plan</strong>
+        <span>Support-first observability for on-prem Windows deployments</span>
+      </a>
+      <nav class="nav">
+        <a href="index.html">Overview</a>
+        <a href="milestone-1.html">Milestone 1</a>
+        <a class="active" href="architecture.html">Architecture</a>
+        <a href="deployment-sizing.html">Deployment &amp; sizing</a>
+        <a href="support-workflows.html">Support workflows</a>
+        <a href="data-security.html">Data &amp; security</a>
+        <a href="roadmap.html">Roadmap</a>
+      </nav>
+    </aside>
+
+    <main class="content">
+      <header class="page-header">
+        <div class="eyebrow">System shape</div>
+        <h1>Dual-source telemetry pipeline</h1>
+        <p class="lead">The system should not choose between existing logs and OpenTelemetry. It should use both: logs give immediate value for current deployments, and OpenTelemetry gives cleaner structured traces and metrics going forward.</p>
+      </header>
+
+      <section class="panel">
+        <h2>Milestone 1 flow</h2>
+        <div class="diagram" aria-label="Telemetry flow diagram">
+          <div class="diagram-row">
+            <div class="node source">
+              <strong>Windows app service</strong>
+              <span>API, background jobs, BP/DQ, SQL execution, errors.</span>
+            </div>
+            <div class="node process">
+              <strong>OpenTelemetry SDK</strong>
+              <span>Traces, metrics, structured logs, correlation fields.</span>
+            </div>
+            <div class="node process">
+              <strong>OTel Collector</strong>
+              <span>Receives, batches, enriches, routes telemetry.</span>
+            </div>
+            <div class="node store">
+              <strong>TimescaleDB</strong>
+              <span>Time-series metrics, summaries, alert inputs.</span>
+            </div>
+          </div>
+          <div class="diagram-row">
+            <div class="node source">
+              <strong>SystemTrace log files</strong>
+              <span>Large pipe-delimited logs already produced by the app.</span>
+            </div>
+            <div class="node process">
+              <strong>Log parser agent</strong>
+              <span>Tails files, parses fields, redacts secrets, enriches sessions.</span>
+            </div>
+            <div class="node store">
+              <strong>Elasticsearch</strong>
+              <span>Searchable logs, errors, SQL text, timelines, support filters.</span>
+            </div>
+            <div class="node view">
+              <strong>Grafana</strong>
+              <span>Support dashboards, searches, alert state, notifications.</span>
+            </div>
+          </div>
+        </div>
+        <p class="flow-note">Kafka is intentionally shown as a later pipeline stage. It remains part of the target architecture, but Milestone 1 can prove parsing, redaction, enrichment, search, dashboards, and alerts first.</p>
+      </section>
+
+      <section class="grid two">
+        <article class="panel status">
+          <h2>SystemTrace parser</h2>
+          <p>The sample log format is pipe-delimited and includes structured values that should be extracted into fields rather than treated as plain text.</p>
+          <ul>
+            <li>Timestamp with timezone.</li>
+            <li>Log type such as Trace or Performance.</li>
+            <li>Component/category and event name.</li>
+            <li>Service/module/class/method context.</li>
+            <li>`SessionID`, `ClientRequestTranID`, `OperationID`, and thread ID.</li>
+            <li>Total elapsed and last log elapsed.</li>
+            <li>Message and data payload.</li>
+            <li>SQL ID, transaction ID, execution time, rows affected, result summary, connection string.</li>
+            <li>BP/DQ names and method names.</li>
+          </ul>
+        </article>
+
+        <article class="panel status green">
+          <h2>OpenTelemetry instrumentation</h2>
+          <p>Instrumentation should be added across the app, not only around HTTP calls.</p>
+          <ul>
+            <li>API request spans with endpoint, method, status, duration, and user/session context.</li>
+            <li>Windows service job spans with job name, run ID, status, and duration.</li>
+            <li>BP spans with BP name, method, session, operation, and result.</li>
+            <li>DQ spans with query object name, method, and operation type.</li>
+            <li>SQL spans with redacted SQL text, execution time, rows affected, and danger flags.</li>
+            <li>Metrics for request counts, error counts, operation duration, queue/job runs, and ingestion health.</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="panel">
+        <h2>Field model</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Field group</th>
+                <th>Examples</th>
+                <th>Purpose</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Identity</td>
+                <td>`customer_id`, `site_id`, `environment`, `server_name`, `service_name`</td>
+                <td>Filter dashboards and support searches by deployment.</td>
+              </tr>
+              <tr>
+                <td>Correlation</td>
+                <td>`session_id`, `operation_id`, `client_request_tran_id`, `trace_id`, `span_id`</td>
+                <td>Connect logs, traces, API calls, BP/DQ calls, and SQL events.</td>
+              </tr>
+              <tr>
+                <td>Application</td>
+                <td>`component`, `event_name`, `bp_name`, `bp_method`, `dq_name`, `dq_method`</td>
+                <td>Find where a failure or slowdown happened in the app stack.</td>
+              </tr>
+              <tr>
+                <td>SQL</td>
+                <td>`sql_operation`, `sql_text_redacted`, `tables`, `execution_ms`, `rows_affected`, `danger_flags`</td>
+                <td>Search slow and risky SQL without storing parameter secrets.</td>
+              </tr>
+              <tr>
+                <td>Outcome</td>
+                <td>`severity`, `status`, `error_type`, `message`, `duration_ms`</td>
+                <td>Drive triage, dashboards, and alerts.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="callout">
+        <strong>Architecture principle</strong>
+        Each component should be useful alone: the parser should produce validated events, the OTel package should emit good telemetry, the collector should route reliably, and dashboards should still explain what is happening if one data source is temporarily missing.
+      </section>
+
+      <nav class="footer-nav">
+        <a href="milestone-1.html">Previous: Milestone 1</a>
+        <a href="deployment-sizing.html">Next: Deployment &amp; sizing</a>
+      </nav>
+    </main>
+  </div>
+</body>
+</html>

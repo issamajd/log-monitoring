@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Deployment &amp; Sizing - Log Monitoring Plan</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <a class="brand" href="index.html">
+        <strong>Log Monitoring Plan</strong>
+        <span>Support-first observability for on-prem Windows deployments</span>
+      </a>
+      <nav class="nav">
+        <a href="index.html">Overview</a>
+        <a href="milestone-1.html">Milestone 1</a>
+        <a href="architecture.html">Architecture</a>
+        <a class="active" href="deployment-sizing.html">Deployment &amp; sizing</a>
+        <a href="support-workflows.html">Support workflows</a>
+        <a href="data-security.html">Data &amp; security</a>
+        <a href="roadmap.html">Roadmap</a>
+      </nav>
+    </aside>
+
+    <main class="content">
+      <header class="page-header">
+        <div class="eyebrow">Deployment model</div>
+        <h1>Flexible full-stack deployment</h1>
+        <p class="lead">The full stack should support the app server and a separate on-prem monitoring server. The same architecture should scale by profile rather than forcing every customer into the smallest machine.</p>
+      </header>
+
+      <section class="panel">
+        <h2>Deployment modes</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Mode</th>
+                <th>When to use it</th>
+                <th>Trade-off</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Same app server</td>
+                <td>Default first on-prem deployment when the customer has one server and Docker is allowed.</td>
+                <td>Simpler deployment, but monitoring competes with the application for CPU, RAM, and disk.</td>
+              </tr>
+              <tr>
+                <td>Separate monitoring server</td>
+                <td>Preferred when customer can provide a VM/server for monitoring.</td>
+                <td>Cleaner resource isolation and safer retention, but requires another machine.</td>
+              </tr>
+              <tr>
+                <td>Optional central forwarding</td>
+                <td>Enabled only when support needs selected redacted telemetry outside the customer site.</td>
+                <td>Useful for remote support, but must be explicitly configured and privacy-controlled.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Sizing profiles</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Profile</th>
+                <th>CPU</th>
+                <th>RAM</th>
+                <th>Disk</th>
+                <th>Use</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Compact</td>
+                <td>4 cores</td>
+                <td>8-12 GB</td>
+                <td>500 GB-1 TB SSD</td>
+                <td>Same-server deployment with strict limits, short retention, and careful alert/dashboards scope.</td>
+              </tr>
+              <tr>
+                <td>Standard</td>
+                <td>4-8 cores</td>
+                <td>16-32 GB</td>
+                <td>1 TB SSD</td>
+                <td>Recommended profile for 14-30 days searchable logs on a serious customer deployment.</td>
+              </tr>
+              <tr>
+                <td>Dedicated monitoring</td>
+                <td>8+ cores</td>
+                <td>32 GB+</td>
+                <td>1 TB+ SSD</td>
+                <td>Preferred for higher log volume, Kafka, longer retention, and future ML/proactive features.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="grid two">
+        <article class="panel status amber">
+          <h2>Resource guardrails</h2>
+          <ul>
+            <li>Cap Elasticsearch heap by profile.</li>
+            <li>Keep enough memory outside Elasticsearch for filesystem cache and the app.</li>
+            <li>Use index rollover and retention policies from the start.</li>
+            <li>Limit dashboard query ranges by default.</li>
+            <li>Track ingestion lag, dropped events, disk usage, and container health.</li>
+            <li>Ask for more RAM/cores before enabling heavier retention or Kafka-heavy workloads.</li>
+          </ul>
+        </article>
+
+        <article class="panel status">
+          <h2>Installation modes</h2>
+          <ul>
+            <li>Online install: Docker Compose pulls images and applies configs.</li>
+            <li>Offline install: bundle images, compose files, dashboards, configs, scripts, and checksums.</li>
+            <li>Both modes must configure the same profiles and customer/site settings.</li>
+            <li>Installer should validate RAM, CPU, disk, Docker, ports, and write permissions.</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="panel">
+        <h2>Retention and disk planning</h2>
+        <p>Searchable retention target is 14-30 days. The practical disk estimate should be based on actual daily log volume.</p>
+        <div class="callout">
+          <strong>Planning formula</strong>
+          Searchable log disk estimate = daily raw log size x retention days x 2 to 3. The multiplier covers indexing overhead, replicas if any, and operational margin.
+        </div>
+        <ul>
+          <li>Same-server default should begin with no replicas and conservative shard counts.</li>
+          <li>Raw files can be archived separately after ingestion.</li>
+          <li>Normal SQL operations can retain full redacted SQL text, but alert/search fields should be extracted to avoid expensive text queries for every dashboard.</li>
+          <li>High-volume customers may need a dedicated monitoring server or shorter searchable retention.</li>
+        </ul>
+      </section>
+
+      <nav class="footer-nav">
+        <a href="architecture.html">Previous: Architecture</a>
+        <a href="support-workflows.html">Next: Support workflows</a>
+      </nav>
+    </main>
+  </div>
+</body>
+</html>

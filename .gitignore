@@ -1,0 +1,105 @@
+# Build results
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Bb]in/
+[Oo]bj/
+[Oo]ut/
+[Ll]og/
+[Ll]ogs/
+
+# Visual Studio files
+.vs/
+*.user
+*.suo
+*.cache
+*.vspscc
+*.vssscc
+
+# Rider files
+.idea/
+
+# .NET Core
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# NuGet
+*.nupkg
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+*.nuget.props
+*.nuget.targets
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+venv/
+.env
+.venv/
+
+# Docker
+.docker/
+
+# Environment files
+*.env
+.env.*
+!.env.example
+
+# Data directories (mounted volumes)
+data/
+volumes/
+
+# Logs
+*.log
+logs/
+
+# Temp files
+*.tmp
+*.temp
+*.swp
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+*.code-workspace
+.vscode/settings.json
+.vscode/launch.json
+
+# Test results
+TestResults/
+coverage/
+*.coverage
+
+# ML models (too large for git)
+models/*.pkl
+models/*.joblib
+models/*.h5
+
+# Secrets
+secrets/
+*.pem
+*.key
+*.crt

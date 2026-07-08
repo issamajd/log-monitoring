@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Data &amp; Security - Log Monitoring Plan</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <a class="brand" href="index.html">
+        <strong>Log Monitoring Plan</strong>
+        <span>Support-first observability for on-prem Windows deployments</span>
+      </a>
+      <nav class="nav">
+        <a href="index.html">Overview</a>
+        <a href="milestone-1.html">Milestone 1</a>
+        <a href="architecture.html">Architecture</a>
+        <a href="deployment-sizing.html">Deployment &amp; sizing</a>
+        <a href="support-workflows.html">Support workflows</a>
+        <a class="active" href="data-security.html">Data &amp; security</a>
+        <a href="roadmap.html">Roadmap</a>
+      </nav>
+    </aside>
+
+    <main class="content">
+      <header class="page-header">
+        <div class="eyebrow">Data handling</div>
+        <h1>Local-first with controlled enrichment and redaction</h1>
+        <p class="lead">The monitoring system will see sensitive operational data. The default must keep data on the customer site, redact secrets, and use read-only access for enrichment.</p>
+      </header>
+
+      <section class="grid two">
+        <article class="panel status red">
+          <h2>Redaction policy</h2>
+          <ul>
+            <li>Store full SQL text, but redact parameter values.</li>
+            <li>Redact passwords, tokens, API keys, connection-string credentials, and obvious secret fields.</li>
+            <li>Extract safe searchable fields from SQL: operation, tables/entities, duration, rows affected, and risk flags.</li>
+            <li>Keep raw unredacted data out of Elasticsearch unless explicitly approved for a controlled diagnostic case.</li>
+            <li>Test redaction with real log samples before production use.</li>
+          </ul>
+        </article>
+
+        <article class="panel status">
+          <h2>Session enrichment</h2>
+          <ul>
+            <li>`SessionID` is the primary support correlation key.</li>
+            <li>The system can connect read-only to SQL Server to resolve session context.</li>
+            <li>Enrichment should cache lookups and avoid heavy queries against the app database.</li>
+            <li>Customer can disable DB enrichment if required.</li>
+            <li>Only safe support fields should be copied into monitoring storage.</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="panel">
+        <h2>Forwarding policy</h2>
+        <p>Default deployment is customer-site only. Optional forwarding exists only for support cases that need it.</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Data class</th>
+                <th>Default location</th>
+                <th>Forwarding rule</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Errors and health summaries</td>
+                <td>Customer site</td>
+                <td>Can be forwarded when enabled and redacted.</td>
+              </tr>
+              <tr>
+                <td>Slow operation summaries</td>
+                <td>Customer site</td>
+                <td>Can be forwarded as metadata and durations.</td>
+              </tr>
+              <tr>
+                <td>SQL text</td>
+                <td>Customer site</td>
+                <td>Forward only redacted SQL and only when needed.</td>
+              </tr>
+              <tr>
+                <td>SQL parameters</td>
+                <td>Not stored as raw values</td>
+                <td>Do not forward raw parameter values.</td>
+              </tr>
+              <tr>
+                <td>User/session context</td>
+                <td>Customer site</td>
+                <td>Forward only safe identifiers or approved fields.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Access and configuration</h2>
+        <ul>
+          <li>Use a read-only SQL Server account for session enrichment.</li>
+          <li>Store monitoring credentials outside source control and outside public dashboard exports.</li>
+          <li>Separate support/operator access from admin access in Grafana.</li>
+          <li>Keep retention and forwarding configurable per customer.</li>
+          <li>Log monitoring-system changes such as retention updates, forwarding enablement, and alert changes.</li>
+        </ul>
+      </section>
+
+      <section class="callout">
+        <strong>Security posture</strong>
+        The system should help support without becoming a second production database full of secrets. The safe default is redacted, local, read-only, and configurable.
+      </section>
+
+      <nav class="footer-nav">
+        <a href="support-workflows.html">Previous: Support workflows</a>
+        <a href="roadmap.html">Next: Roadmap</a>
+      </nav>
+    </main>
+  </div>
+</body>
+</html>

@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Log Monitoring Project Plan</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <a class="brand" href="index.html">
+        <strong>Log Monitoring Plan</strong>
+        <span>Support-first observability for on-prem Windows deployments</span>
+      </a>
+      <nav class="nav">
+        <a class="active" href="index.html">Overview</a>
+        <a href="milestone-1.html">Milestone 1</a>
+        <a href="architecture.html">Architecture</a>
+        <a href="deployment-sizing.html">Deployment &amp; sizing</a>
+        <a href="support-workflows.html">Support workflows</a>
+        <a href="data-security.html">Data &amp; security</a>
+        <a href="roadmap.html">Roadmap</a>
+      </nav>
+    </aside>
+
+    <main class="content">
+      <header class="page-header">
+        <div class="eyebrow">Project recap</div>
+        <h1>Build a practical monitoring system around the logs you already have.</h1>
+        <p class="lead">The project is for our own on-prem customer deployments, where the application usually runs as a Windows service on one server. The first usable version should help support find errors quickly, identify slow operations, and investigate risky SQL/data changes.</p>
+        <div class="meta">
+          <span class="pill">Last updated: 2026-07-07</span>
+          <span class="pill">Primary user: Support team</span>
+          <span class="pill">Deployment: Windows on-prem</span>
+          <span class="pill">Retention: 14-30 days searchable</span>
+        </div>
+      </header>
+
+      <section class="grid two">
+        <article class="panel status">
+          <h2>Direction</h2>
+          <p>The original plan has a solid backbone, but it needs to be refocused around current reality: very large existing application logs plus direct OpenTelemetry instrumentation.</p>
+          <ul>
+            <li>Keep Elasticsearch, TimescaleDB, Grafana, OpenTelemetry, and Kafka in the architecture.</li>
+            <li>Make Milestone 1 support-first, not AI-first or cluster-first.</li>
+            <li>Support same-server and separate monitoring-server deployments.</li>
+            <li>Use Docker Compose as the primary deployment model.</li>
+          </ul>
+        </article>
+
+        <article class="panel status amber">
+          <h2>Key adjustment</h2>
+          <p>The first pipeline must ingest both sources:</p>
+          <ul>
+            <li>Existing `SystemTrace_*.log` files, because they already contain API, BP, DQ, SQL, session, operation, and timing details.</li>
+            <li>OpenTelemetry from app code, because we can modify the application and add better correlation, traces, metrics, and structured events.</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="panel">
+        <h2>Priority order</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Rank</th>
+                <th>Need</th>
+                <th>What the system should answer</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>1</td>
+                <td>Find errors fast</td>
+                <td>What failed in this customer/time window, and which session, operation, BP, DQ, SQL, or service component was involved?</td>
+              </tr>
+              <tr>
+                <td>2</td>
+                <td>Find slow operations</td>
+                <td>Which API, business process, data query, SQL statement, or scheduler job is slow?</td>
+              </tr>
+              <tr>
+                <td>3</td>
+                <td>Detect dangerous SQL/data changes</td>
+                <td>Are there high-risk updates/deletes, high row counts, missing WHERE clauses, or unusual table/entity changes?</td>
+              </tr>
+              <tr>
+                <td>4</td>
+                <td>Understand one request/session</td>
+                <td>What happened across the timeline of a `SessionID`, `OperationID`, API call, job, BP, DQ, and SQL execution?</td>
+              </tr>
+              <tr>
+                <td>5</td>
+                <td>Reduce huge log-file pain</td>
+                <td>How do we search, retain, archive, and rotate large logs without manually opening massive files?</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="grid three">
+        <article class="panel status green">
+          <h3>Known environment</h3>
+          <ul>
+            <li>Customer deployments are on-prem.</li>
+            <li>Windows service hosting is the current norm.</li>
+            <li>SQL Server is the app database.</li>
+            <li>Docker is acceptable.</li>
+            <li>Online and offline installation modes are required.</li>
+          </ul>
+        </article>
+
+        <article class="panel status violet">
+          <h3>Target hardware</h3>
+          <ul>
+            <li>4+ CPU cores.</li>
+            <li>More than 8 GB RAM, with 16 GB+ preferred.</li>
+            <li>About 1 TB disk.</li>
+            <li>Ability to ask customers for more cores/RAM when needed.</li>
+          </ul>
+        </article>
+
+        <article class="panel status red">
+          <h3>Non-negotiables</h3>
+          <ul>
+            <li>Redact SQL parameters and secrets.</li>
+            <li>Use read-only DB access for enrichment.</li>
+            <li>Keep data local by default.</li>
+            <li>Make central forwarding optional and filtered.</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="panel">
+        <h2>Documentation set</h2>
+        <p>These pages are the working plan. They should be revised as implementation decisions become real code and measured results.</p>
+        <ul>
+          <li><a href="milestone-1.html">Milestone 1</a> defines the first support-ready release.</li>
+          <li><a href="architecture.html">Architecture</a> shows the dual-source telemetry pipeline.</li>
+          <li><a href="deployment-sizing.html">Deployment &amp; sizing</a> captures same-server and dedicated-server profiles.</li>
+          <li><a href="support-workflows.html">Support workflows</a> defines the first dashboards and investigation paths.</li>
+          <li><a href="data-security.html">Data &amp; security</a> captures redaction, enrichment, and optional forwarding rules.</li>
+          <li><a href="roadmap.html">Roadmap</a> reshapes the old 7-phase plan into a smaller practical sequence.</li>
+        </ul>
+      </section>
+
+      <nav class="footer-nav">
+        <span></span>
+        <a href="milestone-1.html">Next: Milestone 1</a>
+      </nav>
+    </main>
+  </div>
+</body>
+</html>
