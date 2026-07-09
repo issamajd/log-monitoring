@@ -396,7 +396,7 @@ public class CustomMetrics : IDisposable
 
     #region Scope Classes
 
-    public readonly struct RequestDurationScope : IDisposable
+    public struct RequestDurationScope : IDisposable
     {
         private readonly CustomMetrics _metrics;
         private readonly string _endpoint;
@@ -425,7 +425,7 @@ public class CustomMetrics : IDisposable
         }
     }
 
-    public readonly struct BusinessOperationScope : IDisposable
+    public struct BusinessOperationScope : IDisposable
     {
         private readonly CustomMetrics _metrics;
         private readonly string _operationType;

@@ -9,6 +9,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.28" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="10.2.3" />
+
     <ProjectReference Include="..\Instrumentation\LogMonitoring.Instrumentation.csproj" />
   </ItemGroup>
 

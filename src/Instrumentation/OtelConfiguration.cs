@@ -101,8 +101,6 @@ public static class OtelConfiguration
                     .AddSqlClientInstrumentation(opts =>
                     {
                         opts.RecordException = true;
-                        opts.SetDbStatementForText = true;
-                        opts.SetDbStatementForStoredProcedure = true;
                     })
                     // Add custom instrumentation sources
                     .AddSource(options.ServiceName)
@@ -157,12 +155,12 @@ public static class OtelConfiguration
                 // Configure exporter
                 if (options.EnableOtlpExporter)
                 {
-                    builder.AddOtlpExporter(opts =>
+                    builder.AddOtlpExporter((opts, metricReaderOptions) =>
                     {
                         opts.Endpoint = new Uri(options.OtlpEndpoint);
                         opts.Protocol = OtlpExportProtocol.Grpc;
                         opts.ExportProcessorType = ExportProcessorType.Batch;
-                        opts.PeriodicExportingMetricReaderOptions = new PeriodicExportingMetricReaderOptions
+                        metricReaderOptions.PeriodicExportingMetricReaderOptions = new PeriodicExportingMetricReaderOptions
                         {
                             ExportIntervalMilliseconds = 10000,
                             ExportTimeoutMilliseconds = 15000
