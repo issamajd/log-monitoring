@@ -88,6 +88,9 @@ Thumbs.db
 .vscode/settings.json
 .vscode/launch.json
 
+# Local worktrees
+.worktrees/
+
 # Test results
 TestResults/
 coverage/
