@@ -106,3 +106,11 @@ secrets/
 *.pem
 *.key
 *.crt
+
+# VitePress docs site
+node_modules/
+site/.vitepress/dist/
+site/.vitepress/cache/
+
+# Local agent settings
+.claude/settings.local.json

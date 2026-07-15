@@ -2,7 +2,7 @@
 
 This directory contains detailed explanations of all configuration files and concepts in the log monitoring system.
 
-> Current planning source of truth: [`../plan/index.html`](../plan/index.html). These explanation files describe existing prototype components and implementation concepts; they do not override the current Milestone 1 plan.
+> Current planning source of truth: the VitePress docs site under [`../../site/`](../../site/). These explanation files describe existing prototype components and implementation concepts; they do not override the current Milestone 1 plan.
 
 ---
 
@@ -513,8 +513,8 @@ docker exec timescaledb psql -U monitoring -d metrics -c "SELECT count(*) FROM m
 
 ## Additional Resources
 
-- [Current Plan](../plan/index.html) - support-first milestone plan
-- [Milestone 1](../plan/milestone-1.html) - first usable release scope
+- [Current Plan](../../site/guide/overview.md) - support-first milestone plan
+- [Milestone 1](../../site/guide/milestone-1.md) - first usable release scope
 - [OpenTelemetry Docs](https://opentelemetry.io/docs/)
 - [Kafka Documentation](https://kafka.apache.org/documentation/)
 - [TimescaleDB Docs](https://docs.timescale.com/)

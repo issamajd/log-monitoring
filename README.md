@@ -2,7 +2,7 @@
 
 Support-first observability for on-prem Windows deployments.
 
-The current plan lives in [`docs/plan/index.html`](docs/plan/index.html). Start there before making implementation decisions.
+The current plan lives in the VitePress docs site under [`site/`](site/). Run `npm install` then `npm run docs:dev` and open http://localhost:5173. Start there before making implementation decisions.
 
 ## Current Direction
 
@@ -20,19 +20,21 @@ Kafka, clustered deployment, and AI/ML anomaly detection are later roadmap items
 
 ## Plan Pages
 
-- [`docs/plan/milestone-1.html`](docs/plan/milestone-1.html) - first usable release scope
-- [`docs/plan/architecture.html`](docs/plan/architecture.html) - dual-source telemetry pipeline
-- [`docs/plan/deployment-sizing.html`](docs/plan/deployment-sizing.html) - same-server and dedicated monitoring profiles
-- [`docs/plan/support-workflows.html`](docs/plan/support-workflows.html) - dashboards and triage workflow
-- [`docs/plan/data-security.html`](docs/plan/data-security.html) - redaction, enrichment, and forwarding rules
-- [`docs/plan/roadmap.html`](docs/plan/roadmap.html) - milestone sequence
+The plan is a VitePress site; sources are in [`site/guide/`](site/guide/).
+
+- [`site/guide/milestone-1.md`](site/guide/milestone-1.md) - first usable release scope
+- [`site/guide/architecture.md`](site/guide/architecture.md) - dual-source telemetry pipeline
+- [`site/guide/deployment-sizing.md`](site/guide/deployment-sizing.md) - same-server and dedicated monitoring profiles
+- [`site/guide/support-workflows.md`](site/guide/support-workflows.md) - dashboards and triage workflow
+- [`site/guide/data-security.md`](site/guide/data-security.md) - residency, enrichment, and forwarding rules
+- [`site/guide/roadmap.md`](site/guide/roadmap.md) - milestone sequence
 
 ## Repository Shape
 
-- `docs/plan/` - current planning source of truth
+- `site/` - current planning source of truth (VitePress docs site)
 - `docker/` - monitoring stack configuration and provisioning
 - `src/Instrumentation/` - .NET OpenTelemetry helper library
 - `src/Consumers/` - existing telemetry consumers from the earlier prototype
 - `tests/` - component tests and sample outputs
 
-Some implementation files still reflect the earlier prototype. Treat the current `docs/plan/` milestone pages as authoritative when deciding what to keep, simplify, or defer.
+Some implementation files still reflect the earlier prototype. Treat the current `site/` milestone pages as authoritative when deciding what to keep, simplify, or defer.
