@@ -2,8 +2,6 @@
 # Single-server deployment configuration
 # Target: 10k-50k events/second
 
-version: '3.8'
-
 networks:
   monitoring-net:
     driver: bridge
@@ -91,33 +89,20 @@ services:
       kafka:
         condition: service_healthy
     entrypoint: ["/bin/bash", "-c"]
-    command: |
-      "
-      echo 'Creating Kafka topics...'
-      sleep 5
-      
-      kafka-topics --create --if-not-exists --bootstrap-server kafka:9092 \
-        --topic telemetry-metrics --partitions 12 --replication-factor 1 \
-        --config retention.ms=604800000 --config compression.type=snappy
+    command:
+      - |
+        set -e
+        echo 'Creating Kafka topics...'
+        sleep 5
 
-      kafka-topics --create --if-not-exists --bootstrap-server kafka:9092 \
-        --topic telemetry-logs --partitions 12 --replication-factor 1 \
-        --config retention.ms=604800000 --config compression.type=snappy
+        kafka-topics --create --if-not-exists --bootstrap-server kafka:9092 --topic telemetry-metrics --partitions 12 --replication-factor 1 --config retention.ms=604800000 --config compression.type=snappy
+        kafka-topics --create --if-not-exists --bootstrap-server kafka:9092 --topic telemetry-logs --partitions 12 --replication-factor 1 --config retention.ms=604800000 --config compression.type=snappy
+        kafka-topics --create --if-not-exists --bootstrap-server kafka:9092 --topic telemetry-traces --partitions 6 --replication-factor 1 --config retention.ms=259200000 --config compression.type=snappy
+        kafka-topics --create --if-not-exists --bootstrap-server kafka:9092 --topic alerts --partitions 3 --replication-factor 1
+        kafka-topics --create --if-not-exists --bootstrap-server kafka:9092 --topic dlq --partitions 3 --replication-factor 1 --config retention.ms=1209600000
 
-      kafka-topics --create --if-not-exists --bootstrap-server kafka:9092 \
-        --topic telemetry-traces --partitions 6 --replication-factor 1 \
-        --config retention.ms=259200000 --config compression.type=snappy
-
-      kafka-topics --create --if-not-exists --bootstrap-server kafka:9092 \
-        --topic alerts --partitions 3 --replication-factor 1
-
-      kafka-topics --create --if-not-exists --bootstrap-server kafka:9092 \
-        --topic dlq --partitions 3 --replication-factor 1 \
-        --config retention.ms=1209600000
-
-      echo 'Topics created:'
-      kafka-topics --list --bootstrap-server kafka:9092
-      "
+        echo 'Topics created:'
+        kafka-topics --list --bootstrap-server kafka:9092
     networks:
       - monitoring-net
 
@@ -295,7 +280,7 @@ services:
     networks:
       - monitoring-net
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:13133/health"]
+      test: ["CMD", "/otelcol-contrib", "validate", "--config=/etc/otelcol-contrib/config.yaml"]
       interval: 10s
       timeout: 5s
       retries: 5

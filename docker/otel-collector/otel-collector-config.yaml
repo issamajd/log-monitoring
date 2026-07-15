@@ -49,10 +49,10 @@ processors:
   resource:
     attributes:
       - key: deployment.environment
-        value: ${DEPLOYMENT_ENV:-development}
+        value: ${env:DEPLOYMENT_ENV}
         action: upsert
       - key: service.namespace
-        value: ${SERVICE_NAMESPACE:-log-monitoring}
+        value: ${env:SERVICE_NAMESPACE}
         action: upsert
 
   # Memory limiter to prevent OOM
@@ -130,6 +130,13 @@ exporters:
     sampling_initial: 5
     sampling_thereafter: 200
 
+  # Detailed application telemetry for local development and troubleshooting.
+  # Keep metrics on the basic exporter above to avoid flooding the console.
+  debug/application:
+    verbosity: detailed
+    sampling_initial: 100
+    sampling_thereafter: 1
+
   # Prometheus exporter for self-monitoring
   prometheus:
     endpoint: 0.0.0.0:8889
@@ -163,13 +170,13 @@ service:
     logs:
       receivers: [otlp]
       processors: [memory_limiter, filter/logs, batch, resource, attributes/logs]
-      exporters: [kafka/logs, debug]
+      exporters: [kafka/logs, debug/application]
 
     # Traces pipeline
     traces:
       receivers: [otlp]
       processors: [memory_limiter, batch, resource, attributes/traces]
-      exporters: [kafka/traces, debug]
+      exporters: [kafka/traces, debug/application]
 
   telemetry:
     logs:

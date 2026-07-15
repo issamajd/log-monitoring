@@ -1,0 +1,700 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>docker-compose.yml — Complete Guided Explanation</title>
+  <style>
+    :root {
+      --ink: #eef4ff;
+      --muted: #9cabbd;
+      --faint: #718096;
+      --panel: #111923;
+      --panel-2: #17212d;
+      --line: #293646;
+      --cyan: #56d8d0;
+      --blue: #72a7ff;
+      --amber: #ffc66d;
+      --red: #ff8e8e;
+      --green: #79d99a;
+      --code: #0a1017;
+      --max: 1180px;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 15% -8%, rgba(86,216,208,.13), transparent 28rem),
+        radial-gradient(circle at 100% 12%, rgba(114,167,255,.10), transparent 32rem),
+        #0b1118;
+      font: 16px/1.65 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    a { color: var(--cyan); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+    code, pre, .eyebrow, .line-ref, .metric strong {
+      font-family: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+    }
+    code { color: #cfe1ff; }
+    :focus-visible { outline: 3px solid var(--amber); outline-offset: 3px; }
+
+    .hero {
+      border-bottom: 1px solid var(--line);
+      padding: 64px 24px 38px;
+    }
+    .hero-inner, .layout, .footer-inner { width: min(var(--max), 100%); margin: 0 auto; }
+    .eyebrow { color: var(--cyan); font-size: .78rem; letter-spacing: .14em; text-transform: uppercase; }
+    h1 { max-width: 900px; margin: 12px 0 14px; font-size: clamp(2.25rem, 7vw, 5.3rem); line-height: .98; letter-spacing: -.055em; }
+    h1 span { color: var(--muted); font-weight: 400; }
+    .lead { max-width: 760px; color: #c6d1df; font-size: clamp(1rem, 2vw, 1.2rem); }
+    .hero-meta { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 26px; }
+    .pill { border: 1px solid var(--line); border-radius: 999px; padding: 6px 11px; background: rgba(17,25,35,.7); color: var(--muted); font-size: .82rem; }
+    .pill.ok { color: var(--green); border-color: rgba(121,217,154,.35); }
+
+    .layout { display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 42px; padding: 38px 24px 80px; }
+    aside { position: sticky; top: 20px; align-self: start; max-height: calc(100vh - 40px); overflow: auto; }
+    .nav-title { color: var(--faint); font-size: .72rem; letter-spacing: .13em; text-transform: uppercase; margin: 0 0 8px; }
+    nav a { display: block; border-left: 1px solid var(--line); padding: 6px 0 6px 13px; color: var(--muted); text-decoration: none; font-size: .88rem; }
+    nav a:hover { border-color: var(--cyan); color: var(--ink); }
+
+    main { min-width: 0; }
+    section { scroll-margin-top: 22px; margin-bottom: 58px; }
+    h2 { margin: 0 0 12px; font-size: clamp(1.55rem, 3vw, 2.4rem); letter-spacing: -.035em; }
+    h3 { margin: 0; font-size: 1.15rem; }
+    h4 { margin: 25px 0 8px; font-size: 1rem; color: #d5e3f3; }
+    p { margin: 8px 0 14px; }
+    .section-intro { max-width: 800px; color: var(--muted); }
+    .line-ref { color: var(--blue); font-size: .76rem; letter-spacing: .04em; }
+
+    .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 24px 0; }
+    .metric { padding: 17px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
+    .metric strong { display: block; color: var(--cyan); font-size: 1.45rem; }
+    .metric span { color: var(--muted); font-size: .82rem; }
+
+    .flow { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 24px; }
+    .flow-node { position: relative; min-height: 112px; border: 1px solid var(--line); border-radius: 12px; padding: 14px; background: linear-gradient(160deg, var(--panel-2), var(--panel)); }
+    .flow-node:not(:last-child)::after { content: "→"; position: absolute; right: -17px; top: 39px; z-index: 2; color: var(--cyan); font-weight: 800; }
+    .flow-node b { display: block; margin-bottom: 5px; }
+    .flow-node span { color: var(--muted); font-size: .78rem; line-height: 1.4; }
+
+    .card, details { border: 1px solid var(--line); border-radius: 14px; background: rgba(17,25,35,.88); }
+    .card { padding: 20px; margin: 14px 0; }
+    .card-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .card p:last-child { margin-bottom: 0; }
+    .callout { border-left: 3px solid var(--blue); padding: 10px 14px; background: rgba(114,167,255,.07); color: #c8d6e7; }
+    .callout.warn { border-color: var(--amber); background: rgba(255,198,109,.07); }
+    .callout.risk { border-color: var(--red); background: rgba(255,142,142,.07); }
+    .callout.good { border-color: var(--green); background: rgba(121,217,154,.07); }
+
+    details { margin: 13px 0; overflow: clip; }
+    summary { cursor: pointer; list-style: none; display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 18px 20px; }
+    summary::-webkit-details-marker { display: none; }
+    summary::after { content: "+"; color: var(--cyan); font: 1.35rem/1 monospace; }
+    details[open] summary::after { content: "−"; }
+    details[open] summary { border-bottom: 1px solid var(--line); }
+    .summary-meta { color: var(--muted); font-size: .8rem; font-weight: 400; }
+    .detail-body { padding: 19px 20px 23px; }
+
+    pre { position: relative; overflow: auto; margin: 0 0 18px; border: 1px solid #233041; border-radius: 10px; padding: 16px; background: var(--code); color: #cfdef0; font-size: .82rem; line-height: 1.55; tab-size: 2; }
+    .kv { width: 100%; border-collapse: collapse; font-size: .92rem; }
+    .kv th, .kv td { border-top: 1px solid var(--line); padding: 10px 8px; vertical-align: top; text-align: left; }
+    .kv th { width: 32%; color: #cfe1ff; font-family: "Cascadia Code", Consolas, monospace; font-size: .82rem; font-weight: 500; }
+    .kv td { color: #bdc9d8; }
+    .kv tr:first-child th, .kv tr:first-child td { border-top: 0; }
+    .tag { display: inline-block; margin-right: 5px; border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px; color: var(--amber); font-size: .72rem; }
+    ul, ol { padding-left: 1.25rem; }
+    li { margin: 6px 0; color: #bdc9d8; }
+
+    .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; }
+    .ref-table { width: 100%; min-width: 700px; border-collapse: collapse; background: var(--panel); font-size: .88rem; }
+    .ref-table th, .ref-table td { padding: 11px 12px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+    .ref-table thead th { color: var(--muted); background: #151e29; font-size: .75rem; letter-spacing: .08em; text-transform: uppercase; }
+    .ref-table tbody tr:last-child td { border-bottom: 0; }
+    .risk-list { counter-reset: risk; display: grid; gap: 10px; padding: 0; }
+    .risk-list li { list-style: none; counter-increment: risk; border: 1px solid var(--line); border-radius: 11px; padding: 14px 16px 14px 52px; background: var(--panel); position: relative; }
+    .risk-list li::before { content: counter(risk, decimal-leading-zero); position: absolute; left: 15px; top: 15px; color: var(--amber); font-family: monospace; }
+    .risk-list strong { color: var(--ink); }
+
+    footer { border-top: 1px solid var(--line); padding: 25px 24px 45px; color: var(--muted); font-size: .84rem; }
+
+    @media (max-width: 900px) {
+      .layout { grid-template-columns: 1fr; }
+      aside { position: static; max-height: none; }
+      nav { display: grid; grid-template-columns: repeat(2, 1fr); }
+      .metrics { grid-template-columns: repeat(2, 1fr); }
+      .flow { grid-template-columns: 1fr; }
+      .flow-node:not(:last-child)::after { content: "↓"; right: 50%; top: auto; bottom: -21px; }
+    }
+    @media (max-width: 620px) {
+      .hero { padding-top: 42px; }
+      .layout { padding-inline: 15px; }
+      .metrics, .card-grid, nav { grid-template-columns: 1fr; }
+      summary { align-items: flex-start; }
+      .summary-meta { display: block; margin-top: 3px; }
+      .kv th, .kv td { display: block; width: 100%; }
+      .kv th { padding-bottom: 2px; }
+      .kv td { border-top: 0; padding-top: 2px; }
+    }
+    @media print {
+      body { background: white; color: #15202b; }
+      aside { display: none; }
+      .layout { display: block; }
+      details { break-inside: avoid; }
+      details:not([open]) > *:not(summary) { display: block; }
+      .card, details, .metric, .flow-node { background: white; border-color: #ccd3da; }
+      .section-intro, li, .kv td, .muted { color: #475569; }
+    }
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <div class="hero-inner">
+      <div class="eyebrow">Repository field guide · 404 source lines</div>
+      <h1>docker-compose.yml <span>explained, completely.</span></h1>
+      <p class="lead">A line-referenced walkthrough of how this single-server log-monitoring stack starts, communicates, stores data, recovers, and exposes its interfaces—plus the operational consequences hidden behind the YAML.</p>
+      <div class="hero-meta">
+        <span class="pill ok">✓ Compose syntax validated</span>
+        <span class="pill">13 services</span>
+        <span class="pill">1 private bridge network</span>
+        <span class="pill">7 named volumes</span>
+        <span class="pill">16 published host ports</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside aria-label="Page navigation">
+      <p class="nav-title">On this page</p>
+      <nav>
+        <a href="#mental-model">Mental model</a>
+        <a href="#grammar">Compose grammar</a>
+        <a href="#shared">Network &amp; volumes</a>
+        <a href="#broker">Kafka group</a>
+        <a href="#databases">Databases</a>
+        <a href="#collection">Collection</a>
+        <a href="#consumers">Consumers</a>
+        <a href="#visualization">Visualization</a>
+        <a href="#references">Ports &amp; topics</a>
+        <a href="#startup">Startup behavior</a>
+        <a href="#review">Important findings</a>
+      </nav>
+    </aside>
+
+    <main>
+      <section id="mental-model">
+        <div class="line-ref">LINES 1–404 · THE WHOLE FILE</div>
+        <h2>The mental model</h2>
+        <p class="section-intro">Docker Compose turns this YAML document into a set of related containers. It creates shared infrastructure first, starts prerequisites, runs two one-time setup containers, and keeps the remaining services alive.</p>
+
+        <div class="metrics">
+          <div class="metric"><strong>13</strong><span>container definitions</span></div>
+          <div class="metric"><strong>11</strong><span>long-running services</span></div>
+          <div class="metric"><strong>2</strong><span>one-shot init jobs</span></div>
+          <div class="metric"><strong>3</strong><span>telemetry signal types</span></div>
+        </div>
+
+        <div class="flow" aria-label="Telemetry flow">
+          <div class="flow-node"><b>Sources</b><span>.NET apps send OTLP; Telegraf collects host and container metrics.</span></div>
+          <div class="flow-node"><b>Collector</b><span>OpenTelemetry receives, enriches, batches, and routes metrics, logs, and traces.</span></div>
+          <div class="flow-node"><b>Kafka</b><span>Durable topics buffer each telemetry signal and decouple producers from consumers.</span></div>
+          <div class="flow-node"><b>Consumers</b><span>Two .NET workers read metrics and logs. No trace consumer is defined here.</span></div>
+          <div class="flow-node"><b>Storage &amp; UI</b><span>TimescaleDB stores metrics; Elasticsearch stores logs; Grafana and Kibana query them.</span></div>
+        </div>
+
+        <div class="card-grid">
+          <div class="card"><h3>Control side-path</h3><p><code>kafka-ui</code> connects directly to Kafka and ZooKeeper so an operator can inspect brokers, topics, partitions, and messages.</p></div>
+          <div class="card"><h3>Initialization side-path</h3><p><code>kafka-init</code> creates topics. <code>elasticsearch-init</code> attempts to create lifecycle policy, template, and first index.</p></div>
+        </div>
+        <p class="callout warn"><strong>Scope note:</strong> the repository README says Kafka is later-roadmap work and Milestone 1 should be simpler. This Compose file is therefore a full-stack prototype/deployment definition, not necessarily the current milestone’s minimum architecture.</p>
+      </section>
+
+      <section id="grammar">
+        <div class="line-ref">SYNTAX USED THROUGHOUT</div>
+        <h2>How to read the Compose grammar</h2>
+        <div class="table-wrap">
+          <table class="ref-table">
+            <thead><tr><th>Pattern</th><th>Meaning</th><th>Example here</th></tr></thead>
+            <tbody>
+              <tr><td><code>key:</code></td><td>A YAML mapping key. Indentation makes everything below it part of that key.</td><td><code>services:</code>, <code>kafka:</code>, <code>environment:</code></td></tr>
+              <tr><td><code>- item</code></td><td>A list entry. Compose accepts lists for ports, mounts, commands, and environment variables.</td><td><code>- monitoring-net</code></td></tr>
+              <tr><td><code>HOST:CONTAINER</code></td><td>Publish a container port on the host. Traffic to the host-side number is forwarded to the container-side number.</td><td><code>"3000:3000"</code></td></tr>
+              <tr><td><code>VOLUME:PATH[:ro]</code></td><td>Mount named storage or a host path at a container path. <code>ro</code> makes it read-only inside the container.</td><td><code>grafana-data:/var/lib/grafana</code></td></tr>
+              <tr><td><code>${NAME:-fallback}</code></td><td>Compose substitutes the shell or <code>.env</code> value; if unset or empty, it uses the fallback.</td><td><code>${GRAFANA_USER:-admin}</code></td></tr>
+              <tr><td><code>__</code> in .NET keys</td><td>ASP.NET Core maps a double underscore to a nested configuration colon.</td><td><code>Kafka__BootstrapServers</code> → <code>Kafka:BootstrapServers</code></td></tr>
+              <tr><td><code>|</code></td><td>YAML literal block: preserve the following multiline text, used here as a shell script.</td><td>The two init-service commands.</td></tr>
+              <tr><td><code>CMD</code></td><td>Execute the arguments directly, without a shell. Pipes, redirects, and variable expansion do not work.</td><td>ZooKeeper and Kafka healthchecks.</td></tr>
+              <tr><td><code>CMD-SHELL</code></td><td>Run through a shell, enabling pipes and shell syntax.</td><td>PostgreSQL, Elasticsearch, Grafana healthchecks.</td></tr>
+              <tr><td><code># comment</code></td><td>Documentation only; Compose ignores it. Blank lines and separator banners are also inert.</td><td>Section headings and port labels.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="callout good"><strong>No <code>version:</code> key is needed.</strong> Modern Docker Compose follows the Compose Specification and accepts this file as written.</p>
+      </section>
+
+      <section id="shared">
+        <div class="line-ref">LINES 1–21</div>
+        <h2>File header, shared network, and storage</h2>
+        <pre><code># Proactive Log Monitoring System - Full Stack Docker Compose
+# Single-server deployment configuration
+# Target: 10k-50k events/second
+
+networks:
+  monitoring-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
+
+volumes:
+  kafka-data:
+  zookeeper-data:
+  zookeeper-logs:
+  timescaledb-data:
+  elasticsearch-data:
+  grafana-data:
+  otel-checkpoint:
+
+services:</code></pre>
+        <table class="kv">
+          <tr><th>Lines 1–3</th><td>Human-only intent: full stack, one server, aspirational throughput of 10k–50k events/second. Comments do not enforce sizing or performance.</td></tr>
+          <tr><th><code>networks</code></th><td>Declares reusable networks. Every service explicitly joins <code>monitoring-net</code>, so containers can resolve one another by service name, such as <code>kafka</code> or <code>timescaledb</code>.</td></tr>
+          <tr><th><code>driver: bridge</code></th><td>Creates a private, software-defined network on this Docker host. It is not a multi-host overlay network.</td></tr>
+          <tr><th><code>ipam / subnet</code></th><td>Docker’s IP address management allocates container addresses from <code>172.28.0.0/16</code>. The fixed range can conflict with a corporate VPN or another Docker network.</td></tr>
+          <tr><th><code>volumes</code></th><td>Declares seven Docker-managed named volumes. Empty values mean “use Docker defaults.” Compose usually prefixes their actual names with the project name.</td></tr>
+          <tr><th><code>services</code></th><td>Begins the container definitions. Each immediate child is a Compose service.</td></tr>
+        </table>
+        <h4>What each named volume preserves</h4>
+        <div class="table-wrap">
+          <table class="ref-table">
+            <thead><tr><th>Volume</th><th>Persistent content</th><th>Survives recreation?</th></tr></thead>
+            <tbody>
+              <tr><td><code>kafka-data</code></td><td>Kafka partitions, offsets, and broker state.</td><td>Yes, until the volume is explicitly removed.</td></tr>
+              <tr><td><code>zookeeper-data</code></td><td>ZooKeeper snapshots/state.</td><td>Yes.</td></tr>
+              <tr><td><code>zookeeper-logs</code></td><td>ZooKeeper transaction logs (not merely console logs).</td><td>Yes.</td></tr>
+              <tr><td><code>timescaledb-data</code></td><td>PostgreSQL/TimescaleDB database cluster.</td><td>Yes.</td></tr>
+              <tr><td><code>elasticsearch-data</code></td><td>Elasticsearch indices and metadata.</td><td>Yes.</td></tr>
+              <tr><td><code>grafana-data</code></td><td>Grafana’s local DB, plugins, sessions, and UI-created state.</td><td>Yes.</td></tr>
+              <tr><td><code>otel-checkpoint</code></td><td>Mounted at <code>/var/lib/otelcol</code>, but the current collector config defines no file-storage/checkpoint extension, so it is presently unused.</td><td>Yes, but no configured writer uses it.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="broker">
+        <div class="line-ref">LINES 22–123 · MESSAGE BROKER</div>
+        <h2>Kafka group</h2>
+        <p class="section-intro">ZooKeeper coordinates this older-mode Kafka deployment; Kafka buffers telemetry; one init job creates topics; Kafka UI provides an operator console.</p>
+
+        <details open>
+          <summary><span><h3>zookeeper</h3><span class="summary-meta">Lines 26–47 · broker coordination</span></span></summary>
+          <div class="detail-body">
+            <pre><code>zookeeper:
+  image: confluentinc/cp-zookeeper:7.5.0
+  container_name: zookeeper
+  hostname: zookeeper
+  ports: ["2181:2181"]
+  environment:
+    ZOOKEEPER_CLIENT_PORT: 2181
+    ZOOKEEPER_TICK_TIME: 2000
+    ZOOKEEPER_INIT_LIMIT: 5
+    ZOOKEEPER_SYNC_LIMIT: 2
+  volumes:
+    - zookeeper-data:/var/lib/zookeeper/data
+    - zookeeper-logs:/var/lib/zookeeper/log
+  networks: [monitoring-net]
+  healthcheck:
+    test: ["CMD", "nc", "-z", "localhost", "2181"]
+    interval: 10s
+    timeout: 5s
+    retries: 5
+  restart: unless-stopped</code></pre>
+            <table class="kv">
+              <tr><th><code>image</code></th><td>Runs Confluent Platform ZooKeeper 7.5.0. The pinned tag improves repeatability.</td></tr>
+              <tr><th><code>container_name</code></th><td>Forces the Docker object name to exactly <code>zookeeper</code>. This is convenient but prevents scaling this service and can collide with another project.</td></tr>
+              <tr><th><code>hostname</code></th><td>Sets the container’s internal host name. Service-name DNS would already provide <code>zookeeper</code>, so this is explicit but mostly redundant.</td></tr>
+              <tr><th><code>2181:2181</code></th><td>Publishes ZooKeeper’s client port on host port 2181. Kafka uses the internal address <code>zookeeper:2181</code>; it does not require this host publication.</td></tr>
+              <tr><th><code>CLIENT_PORT</code></th><td>The port on which ZooKeeper accepts clients.</td></tr>
+              <tr><th><code>TICK_TIME: 2000</code></th><td>Base timing unit is 2,000 ms. Session and synchronization timing derive from it.</td></tr>
+              <tr><th><code>INIT_LIMIT: 5</code></th><td>A follower may take 5 ticks (10 seconds) to connect and perform initial synchronization with a leader.</td></tr>
+              <tr><th><code>SYNC_LIMIT: 2</code></th><td>A follower may lag 2 ticks (4 seconds) during normal synchronization. On this single-node deployment those ensemble limits have little practical effect.</td></tr>
+              <tr><th><code>volumes</code></th><td>Separates snapshots/data from transaction logs and keeps both across container replacement.</td></tr>
+              <tr><th><code>healthcheck</code></th><td>Every 10 seconds, <code>nc -z</code> tries to open local TCP port 2181. A check may run for 5 seconds; 5 consecutive failures mark the service unhealthy.</td></tr>
+              <tr><th><code>restart</code></th><td>Docker restarts it after failure or daemon restart, except when an operator explicitly stops it.</td></tr>
+            </table>
+          </div>
+        </details>
+
+        <details open>
+          <summary><span><h3>kafka</h3><span class="summary-meta">Lines 49–83 · single broker</span></span></summary>
+          <div class="detail-body">
+            <pre><code>kafka:
+  image: confluentinc/cp-kafka:7.5.0
+  depends_on:
+    zookeeper: { condition: service_healthy }
+  ports:
+    - "9092:9092"
+    - "9093:9093"
+  environment:
+    KAFKA_BROKER_ID: 1
+    KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+    KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+    KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:9093
+    KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+    KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+    KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+    KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+    KAFKA_NUM_PARTITIONS: 6
+    KAFKA_LOG_RETENTION_HOURS: 168
+    KAFKA_LOG_RETENTION_BYTES: 10737418240
+    KAFKA_COMPRESSION_TYPE: snappy
+    KAFKA_MESSAGE_MAX_BYTES: 2097152</code></pre>
+            <table class="kv">
+              <tr><th><code>depends_on</code></th><td>Kafka is not started until ZooKeeper’s healthcheck passes. It controls startup ordering, not ongoing availability.</td></tr>
+              <tr><th><code>9092</code> / <code>9093</code></th><td>9092 is the container-to-container listener advertised as <code>kafka:9092</code>. Host clients should use 9093, advertised as <code>localhost:9093</code>. Publishing 9092 on the host is redundant/misleading because Kafka metadata advertises its internal DNS name for that listener.</td></tr>
+              <tr><th><code>BROKER_ID: 1</code></th><td>Unique broker identity. There is only one broker.</td></tr>
+              <tr><th><code>ZOOKEEPER_CONNECT</code></th><td>Finds ZooKeeper by Compose DNS on the private network.</td></tr>
+              <tr><th><code>SECURITY_PROTOCOL_MAP</code></th><td>Maps both named listeners to unencrypted, unauthenticated PLAINTEXT transport.</td></tr>
+              <tr><th><code>ADVERTISED_LISTENERS</code></th><td>Addresses returned to clients in Kafka metadata: containers get <code>kafka:9092</code>; software on this same host gets <code>localhost:9093</code>. Remote machines cannot use the localhost address.</td></tr>
+              <tr><th><code>INTER_BROKER...</code></th><td>Selects the internal PLAINTEXT listener for broker-to-broker traffic; currently only one broker exists.</td></tr>
+              <tr><th><code>OFFSETS...: 1</code></th><td>Kafka’s internal consumer-offset topic keeps one copy, required because only one broker is available.</td></tr>
+              <tr><th><code>TRANSACTION...ISR: 1</code></th><td>Transactional state may be considered available with one in-sync replica.</td></tr>
+              <tr><th><code>TRANSACTION...RF: 1</code></th><td>The transaction state topic keeps one copy. All three “1” settings sacrifice fault tolerance to make a single broker work.</td></tr>
+              <tr><th><code>AUTO_CREATE...false</code></th><td>A producer cannot silently create a misspelled topic. Topics must come from <code>kafka-init</code> or an operator.</td></tr>
+              <tr><th><code>NUM_PARTITIONS: 6</code></th><td>Default partition count for any topic created without an explicit value. Every init-created topic supplies its own value, so this is a fallback.</td></tr>
+              <tr><th><code>RETENTION_HOURS: 168</code></th><td>Broker default is 7 days. Topic-level <code>retention.ms</code> below overrides it for selected topics.</td></tr>
+              <tr><th><code>RETENTION_BYTES</code></th><td>10,737,418,240 bytes = 10 GiB per partition, not for the whole broker. Kafka deletes old segments when the time or size limit is reached.</td></tr>
+              <tr><th><code>COMPRESSION_TYPE</code></th><td>Sets Snappy as the broker/topic default compression strategy, trading CPU for lower disk and network usage.</td></tr>
+              <tr><th><code>MESSAGE_MAX_BYTES</code></th><td>Allows record batches up to roughly 2 MiB. Producers and consumers need compatible request/fetch limits.</td></tr>
+              <tr><th><code>kafka-data</code></th><td>Persists partitions and broker state at <code>/var/lib/kafka/data</code>.</td></tr>
+              <tr><th><code>healthcheck</code></th><td>Runs Kafka’s API-version client against local port 9092 every 10 seconds. Five 10-second failures mark it unhealthy.</td></tr>
+              <tr><th><code>restart</code></th><td>Restarts this long-running broker unless manually stopped.</td></tr>
+            </table>
+          </div>
+        </details>
+
+        <details>
+          <summary><span><h3>kafka-init</h3><span class="summary-meta">Lines 85–107 · one-time topic creation</span></span></summary>
+          <div class="detail-body">
+            <p><code>image</code> reuses the Kafka 7.5.0 image because it contains <code>kafka-topics</code>. <code>depends_on</code> waits for the broker to be healthy. <code>entrypoint: ["/bin/bash", "-c"]</code> tells the container to treat the following literal block as a Bash program.</p>
+            <table class="kv">
+              <tr><th><code>set -e</code></th><td>Exit the script immediately when a command fails, so a failed topic creation does not end with a misleading success.</td></tr>
+              <tr><th><code>sleep 5</code></th><td>Adds a five-second cushion even after Kafka reports healthy.</td></tr>
+              <tr><th><code>--if-not-exists</code></th><td>Makes topic creation repeatable: existing topics are left in place rather than causing an error. It does not update existing topic settings.</td></tr>
+              <tr><th><code>--bootstrap-server</code></th><td>Connects to the internal listener at <code>kafka:9092</code>.</td></tr>
+              <tr><th><code>--replication-factor 1</code></th><td>Stores only one copy of every partition because there is one broker. Broker loss means no redundant copy.</td></tr>
+              <tr><th><code>compression.type=snappy</code></th><td>Topic-level compression setting for the three telemetry topics.</td></tr>
+              <tr><th><code>kafka-topics --list</code></th><td>Prints the resulting topic list to the init container logs.</td></tr>
+              <tr><th>No <code>restart</code></th><td>This is intentionally a one-shot job: successful exit leaves a stopped container. A later <code>docker compose up</code> may not rerun an already-created unchanged container unless it is recreated.</td></tr>
+            </table>
+            <h4>Topics created</h4>
+            <div class="table-wrap">
+              <table class="ref-table">
+                <thead><tr><th>Topic</th><th>Partitions</th><th>Explicit time retention</th><th>Purpose</th></tr></thead>
+                <tbody>
+                  <tr><td><code>telemetry-metrics</code></td><td>12</td><td>604,800,000 ms = 7 days</td><td>OTLP metric batches for the metrics consumer.</td></tr>
+                  <tr><td><code>telemetry-logs</code></td><td>12</td><td>604,800,000 ms = 7 days</td><td>OTLP log batches for the logs consumer.</td></tr>
+                  <tr><td><code>telemetry-traces</code></td><td>6</td><td>259,200,000 ms = 3 days</td><td>OTLP trace batches; this Compose file defines no trace consumer.</td></tr>
+                  <tr><td><code>alerts</code></td><td>3</td><td>Broker default = 7 days</td><td>Reserved alert stream; no producer/consumer is defined here.</td></tr>
+                  <tr><td><code>dlq</code></td><td>3</td><td>1,209,600,000 ms = 14 days</td><td>Dead-letter queue for failed messages; its use depends on application code.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </details>
+
+        <details>
+          <summary><span><h3>kafka-ui</h3><span class="summary-meta">Lines 109–123 · browser administration</span></span></summary>
+          <div class="detail-body">
+            <table class="kv">
+              <tr><th><code>image: ...:latest</code></th><td>Runs Provectus Kafka UI, but the floating <code>latest</code> tag makes upgrades non-repeatable.</td></tr>
+              <tr><th><code>depends_on</code></th><td>Waits until Kafka is healthy before starting.</td></tr>
+              <tr><th><code>8080:8080</code></th><td>Makes the UI available from the host at <code>http://localhost:8080</code>.</td></tr>
+              <tr><th><code>CLUSTERS_0_NAME</code></th><td>Display name shown in the UI: <code>log-monitoring</code>. <code>0</code> is the first configured cluster.</td></tr>
+              <tr><th><code>BOOTSTRAPSERVERS</code></th><td>Connects to Kafka over the internal network.</td></tr>
+              <tr><th><code>ZOOKEEPER</code></th><td>Lets the UI inspect ZooKeeper-backed cluster metadata.</td></tr>
+              <tr><th><code>network / restart</code></th><td>Joins the shared network and is automatically restarted unless explicitly stopped.</td></tr>
+            </table>
+          </div>
+        </details>
+      </section>
+
+      <section id="databases">
+        <div class="line-ref">LINES 125–254 · DATABASES</div>
+        <h2>TimescaleDB and Elasticsearch</h2>
+
+        <details open>
+          <summary><span><h3>timescaledb</h3><span class="summary-meta">Lines 129–160 · metric storage</span></span></summary>
+          <div class="detail-body">
+            <table class="kv">
+              <tr><th><code>latest-pg15</code></th><td>TimescaleDB built on PostgreSQL 15. Because <code>latest</code> floats, rebuilding later may pull different TimescaleDB code.</td></tr>
+              <tr><th><code>container_name / hostname</code></th><td>Both are fixed to <code>timescaledb</code>; other containers connect using that DNS name.</td></tr>
+              <tr><th><code>5432:5432</code></th><td>Exposes PostgreSQL to host tools on the default PostgreSQL port. Internal clients use <code>timescaledb:5432</code>.</td></tr>
+              <tr><th><code>POSTGRES_USER</code></th><td>Uses <code>TIMESCALE_USER</code> from the host or defaults to <code>monitoring</code>.</td></tr>
+              <tr><th><code>POSTGRES_PASSWORD</code></th><td>Uses <code>TIMESCALE_PASSWORD</code> or the insecure development default <code>monitoring123</code>.</td></tr>
+              <tr><th><code>POSTGRES_DB</code></th><td>Uses <code>TIMESCALE_DB</code> or creates/selects <code>metrics</code>.</td></tr>
+              <tr><th><code>TELEMETRY: off</code></th><td>Disables TimescaleDB product-usage telemetry.</td></tr>
+              <tr><th><code>timescaledb-data</code></th><td>Persists the PostgreSQL data directory.</td></tr>
+              <tr><th><code>init.sql ... :ro</code></th><td>Read-only bind-mount of the repository SQL into PostgreSQL’s init directory. It creates the extension, schema, hypertables, aggregates, policies, helper functions, and grants—but only when the data directory is first initialized.</td></tr>
+              <tr><th><code>pg_isready</code></th><td>Checks every 10 seconds that PostgreSQL accepts connections for the selected user/database. Five 5-second failures mark it unhealthy.</td></tr>
+              <tr><th><code>command</code></th><td>Overrides/adds PostgreSQL startup arguments. Repeated <code>-c</code> pairs set individual server parameters.</td></tr>
+              <tr><th><code>shared_preload_libraries</code></th><td>Loads TimescaleDB at server startup, required for its background workers and full feature set.</td></tr>
+              <tr><th><code>max_connections=200</code></th><td>Allows at most 200 concurrent PostgreSQL connections, subject to memory.</td></tr>
+              <tr><th><code>shared_buffers=512MB</code></th><td>Allocates 512 MiB of PostgreSQL shared cache.</td></tr>
+              <tr><th><code>effective_cache_size=1536MB</code></th><td>Planner estimate of cache available across PostgreSQL and the OS. It is not a memory allocation.</td></tr>
+              <tr><th><code>restart</code></th><td>Restarts the database unless explicitly stopped.</td></tr>
+            </table>
+            <p class="callout risk"><strong>Configuration mismatch:</strong> the metrics consumer hard-codes <code>monitoring / monitoring123 / metrics</code>. If any <code>TIMESCALE_*</code> value is overridden here, that consumer’s connection string does not follow it and will likely fail.</p>
+          </div>
+        </details>
+
+        <details open>
+          <summary><span><h3>elasticsearch</h3><span class="summary-meta">Lines 162–193 · searchable log storage</span></span></summary>
+          <div class="detail-body">
+            <table class="kv">
+              <tr><th><code>8.11.0</code></th><td>Pinned official Elasticsearch image. Kibana below uses the same version, which is the correct compatibility pattern.</td></tr>
+              <tr><th><code>node.name</code></th><td>Names the single Elasticsearch node <code>elasticsearch</code>.</td></tr>
+              <tr><th><code>cluster.name</code></th><td>Logical cluster label <code>log-monitoring-cluster</code>.</td></tr>
+              <tr><th><code>discovery.type</code></th><td>Enables supported single-node discovery and bypasses multi-node bootstrap expectations.</td></tr>
+              <tr><th><code>bootstrap.memory_lock</code></th><td>Asks Elasticsearch to lock its process memory so heap pages are not swapped.</td></tr>
+              <tr><th><code>xpack.security.enabled=false</code></th><td>Disables authentication/authorization. Anyone who can reach port 9200 can read, modify, or delete data.</td></tr>
+              <tr><th><code>http.ssl.enabled=false</code></th><td>Disables HTTPS on the REST endpoint. Traffic is plain HTTP.</td></tr>
+              <tr><th><code>ES_JAVA_OPTS</code></th><td>Sets both initial and maximum JVM heap to 1 GiB, avoiding heap resizing.</td></tr>
+              <tr><th><code>memlock -1</code></th><td>Removes soft and hard locked-memory limits so <code>bootstrap.memory_lock</code> can work.</td></tr>
+              <tr><th><code>nofile 65536</code></th><td>Allows up to 65,536 open file descriptors, important because Lucene uses many files.</td></tr>
+              <tr><th><code>elasticsearch-data</code></th><td>Persists indices at the image’s standard data path.</td></tr>
+              <tr><th><code>9200:9200</code></th><td>Publishes the HTTP REST API. Host URL: <code>http://localhost:9200</code>.</td></tr>
+              <tr><th><code>9300:9300</code></th><td>Publishes the node transport port used for Elasticsearch cluster-node communication. A single-node stack does not need it exposed to the host.</td></tr>
+              <tr><th><code>healthcheck</code></th><td>Every 30 seconds, fetches cluster health and accepts either <code>green</code> or <code>yellow</code>. Yellow is normal for a single node when replicas cannot be assigned. The shell pipe requires <code>CMD-SHELL</code>.</td></tr>
+              <tr><th><code>restart</code></th><td>Restarts Elasticsearch unless explicitly stopped.</td></tr>
+            </table>
+          </div>
+        </details>
+
+        <details>
+          <summary><span><h3>elasticsearch-init</h3><span class="summary-meta">Lines 195–254 · policy, template, first index</span></span></summary>
+          <div class="detail-body">
+            <p>The job waits for Elasticsearch health, replaces the image entrypoint with Bash, waits another 10 seconds, and uses HTTP <code>PUT</code> requests. Repeating a <code>PUT</code> updates/replaces the named resource, so the intended API operations are broadly idempotent.</p>
+            <table class="kv">
+              <tr><th>ILM policy <code>logs-policy</code></th><td><strong>Hot:</strong> roll over after 1 day or when a primary shard reaches 50 GB. <strong>Warm:</strong> from day 2, shrink to one shard and force-merge to one segment. <strong>Delete:</strong> remove at day 30.</td></tr>
+              <tr><th>Template match</th><td>Applies to indices named <code>logs-*</code>.</td></tr>
+              <tr><th><code>number_of_shards: 3</code></th><td>Each new logs index starts with three primary shards.</td></tr>
+              <tr><th><code>number_of_replicas: 0</code></th><td>No replica shards, appropriate for one node but providing no copy-level fault tolerance.</td></tr>
+              <tr><th>Lifecycle settings</th><td>Associates indices with <code>logs-policy</code> and uses the alias <code>logs</code> as the rollover write target.</td></tr>
+              <tr><th><code>@timestamp: date</code></th><td>Time-aware date field for range filtering and time charts.</td></tr>
+              <tr><th><code>message: text</code></th><td>Analyzed full-text content, suitable for word search.</td></tr>
+              <tr><th>Keyword fields</th><td><code>level</code>, <code>service_name</code>, <code>host_name</code>, <code>trace_id</code>, and <code>span_id</code> remain exact values for filters, grouping, and joins/correlation.</td></tr>
+              <tr><th>Initial index</th><td>Creates <code>logs-000001</code> and assigns alias <code>logs</code> with <code>is_write_index: true</code>. The logs consumer writes through this alias.</td></tr>
+              <tr><th>No <code>restart</code></th><td>Like <code>kafka-init</code>, it is intended to finish and remain stopped.</td></tr>
+            </table>
+            <p class="callout risk"><strong>Likely runtime bug:</strong> lines 203 and 252 wrap the entire Bash block in literal double-quote characters. With <code>/bin/bash -c</code>, that can turn the whole multiline body into one quoted command name instead of executing each command. The YAML is valid, but the init script is likely to fail with “command not found.” The extra outer quote lines should not be part of the script.</p>
+          </div>
+        </details>
+      </section>
+
+      <section id="collection">
+        <div class="line-ref">LINES 256–309 · TELEMETRY COLLECTION</div>
+        <h2>OpenTelemetry Collector and Telegraf</h2>
+
+        <details open>
+          <summary><span><h3>otel-collector</h3><span class="summary-meta">Lines 260–288 · telemetry gateway</span></span></summary>
+          <div class="detail-body">
+            <table class="kv">
+              <tr><th><code>contrib:0.91.0</code></th><td>Pinned “contrib” Collector distribution, which includes Kafka exporters, Prometheus components, host metrics, and diagnostic extensions beyond the core build.</td></tr>
+              <tr><th><code>depends_on kafka</code></th><td>Waits for healthy Kafka because its pipelines export all three signal types there.</td></tr>
+              <tr><th><code>4317</code></th><td>OTLP over gRPC ingress for instrumented applications.</td></tr>
+              <tr><th><code>4318</code></th><td>OTLP over HTTP ingress.</td></tr>
+              <tr><th><code>8888</code></th><td>Collector’s own internal Prometheus-format metrics.</td></tr>
+              <tr><th><code>8889</code></th><td>Configured Prometheus exporter endpoint. The current pipelines do not list that exporter, so it may expose no pipeline-exported metrics.</td></tr>
+              <tr><th><code>13133</code></th><td>Health-check extension endpoint at <code>/health</code>.</td></tr>
+              <tr><th><code>55679</code></th><td>zPages diagnostic UI for live trace/debug information.</td></tr>
+              <tr><th>config bind mount</th><td>Replaces the container config with the repository file, read-only. Changes require a container restart to take effect.</td></tr>
+              <tr><th><code>otel-checkpoint</code></th><td>Provides persistent space at <code>/var/lib/otelcol</code>; as noted earlier, current config does not use it.</td></tr>
+              <tr><th><code>DEPLOYMENT_ENV</code></th><td>Uses a host value or <code>development</code>; the Collector inserts it as <code>deployment.environment</code>.</td></tr>
+              <tr><th><code>SERVICE_NAMESPACE</code></th><td>Constant <code>log-monitoring</code>, inserted into telemetry resources.</td></tr>
+              <tr><th><code>healthcheck test</code></th><td>Runs the Collector’s <code>validate</code> subcommand against the mounted config every 10 seconds. This proves the file parses, but does not test the live <code>/health</code> endpoint or Kafka connectivity.</td></tr>
+              <tr><th><code>command</code></th><td>Starts the Collector with the mounted config path.</td></tr>
+              <tr><th><code>restart / network</code></th><td>Keeps the gateway alive and joins it to Kafka and Telegraf on the private network.</td></tr>
+            </table>
+          </div>
+        </details>
+
+        <details open>
+          <summary><span><h3>telegraf</h3><span class="summary-meta">Lines 290–309 · host/container metric agent</span></span></summary>
+          <div class="detail-body">
+            <table class="kv">
+              <tr><th><code>telegraf:1.29</code></th><td>Pinned Telegraf minor version used to collect Linux host and Docker metrics.</td></tr>
+              <tr><th><code>depends_on: [otel-collector]</code></th><td>Short syntax guarantees start order only. It does not wait for the Collector healthcheck. In this design the Collector actually scrapes Telegraf, so Telegraf can start independently.</td></tr>
+              <tr><th><code>9273:9273</code></th><td>Publishes Telegraf’s Prometheus endpoint. The Collector scrapes it internally at <code>telegraf:9273</code>; host publication is only needed for outside access.</td></tr>
+              <tr><th>config bind mount</th><td>Read-only repository configuration at Telegraf’s standard config path.</td></tr>
+              <tr><th><code>docker.sock</code></th><td>Read-only mount of the Docker Engine Unix socket, enabling container metrics. “Read-only mount” does not make the Docker API harmless; socket access is highly privileged.</td></tr>
+              <tr><th><code>/proc</code> and <code>/sys</code></th><td>Read-only host kernel/process views mounted at alternate paths so Telegraf can observe the host rather than only its container.</td></tr>
+              <tr><th><code>HOST_PROC / HOST_SYS</code></th><td>Tell Telegraf plugins to read those alternate host paths.</td></tr>
+              <tr><th><code>DEPLOYMENT_ENV</code></th><td>Tags collected metrics with the chosen environment, defaulting to development.</td></tr>
+              <tr><th><code>network / restart</code></th><td>Makes <code>telegraf:9273</code> resolvable and keeps the agent running.</td></tr>
+            </table>
+            <p class="callout warn"><strong>Platform assumption:</strong> the socket, <code>/proc</code>, <code>/sys</code>, and enabled Telegraf plugins assume a Linux Docker host. Under Docker Desktop on Windows, they observe the Linux VM/container environment rather than native Windows performance counters.</p>
+          </div>
+        </details>
+      </section>
+
+      <section id="consumers">
+        <div class="line-ref">LINES 311–354 · .NET CONSUMERS</div>
+        <h2>Application consumers</h2>
+        <p class="section-intro">Unlike services pulled entirely from registries, these two are built from repository Dockerfiles. Compose sends the repository root as build context, and each Dockerfile decides what to copy and compile.</p>
+
+        <details open>
+          <summary><span><h3>metrics-consumer</h3><span class="summary-meta">Lines 315–333 · Kafka → TimescaleDB</span></span></summary>
+          <div class="detail-body">
+            <table class="kv">
+              <tr><th><code>build.context: .</code></th><td>The entire repository root is available to the Docker build, filtered by <code>.dockerignore</code> if present.</td></tr>
+              <tr><th><code>dockerfile</code></th><td>Build instructions come from <code>src/Consumers/MetricsConsumer/Dockerfile</code>, resolved relative to the context.</td></tr>
+              <tr><th><code>container_name / hostname</code></th><td>Fixed to <code>metrics-consumer</code>.</td></tr>
+              <tr><th><code>depends_on</code></th><td>Waits for healthy Kafka and TimescaleDB, but not for <code>kafka-init</code> to finish. A race is possible if the required topic has not yet been created.</td></tr>
+              <tr><th><code>BootstrapServers</code></th><td>ASP.NET configuration for internal Kafka address <code>kafka:9092</code>.</td></tr>
+              <tr><th><code>ConsumerGroupId</code></th><td>All instances with <code>metrics-consumer-group</code> share the topic partitions and committed offsets.</td></tr>
+              <tr><th><code>MetricsTopic</code></th><td>Reads <code>telemetry-metrics</code>, which the init job creates with 12 partitions.</td></tr>
+              <tr><th><code>ConnectionString</code></th><td>Connects to database <code>metrics</code> at <code>timescaledb:5432</code> using hard-coded development credentials. Semicolons are part of the .NET connection string, not YAML separators.</td></tr>
+              <tr><th>No <code>ports</code></th><td>This worker is not directly reachable from the host; it consumes and writes in the background.</td></tr>
+              <tr><th><code>restart</code></th><td>Automatically restarts the worker after failure.</td></tr>
+            </table>
+          </div>
+        </details>
+
+        <details open>
+          <summary><span><h3>logs-consumer</h3><span class="summary-meta">Lines 335–354 · Kafka → Elasticsearch</span></span></summary>
+          <div class="detail-body">
+            <table class="kv">
+              <tr><th><code>build</code></th><td>Uses repository context and <code>src/Consumers/LogsConsumer/Dockerfile</code>.</td></tr>
+              <tr><th><code>container_name / hostname</code></th><td>Fixed to <code>logs-consumer</code>.</td></tr>
+              <tr><th><code>depends_on</code></th><td>Waits for Kafka and Elasticsearch health, but not for either init job. It may begin before the logs topic or <code>logs</code> write alias exists.</td></tr>
+              <tr><th><code>BootstrapServers</code></th><td>Internal Kafka listener.</td></tr>
+              <tr><th><code>ConsumerGroupId</code></th><td>Committed offsets and partition sharing belong to <code>logs-consumer-group</code>.</td></tr>
+              <tr><th><code>LogsTopic</code></th><td>Reads <code>telemetry-logs</code>.</td></tr>
+              <tr><th><code>Elasticsearch__Url</code></th><td>Internal unencrypted Elasticsearch REST endpoint.</td></tr>
+              <tr><th><code>IndexAlias</code></th><td>Writes to alias <code>logs</code>, intended to point at <code>logs-000001</code> and later rollover indices.</td></tr>
+              <tr><th>No <code>ports</code></th><td>Background worker only.</td></tr>
+              <tr><th><code>restart</code></th><td>Automatically restarts unless manually stopped.</td></tr>
+            </table>
+          </div>
+        </details>
+      </section>
+
+      <section id="visualization">
+        <div class="line-ref">LINES 356–404 · VISUALIZATION</div>
+        <h2>Grafana and Kibana</h2>
+
+        <details open>
+          <summary><span><h3>grafana</h3><span class="summary-meta">Lines 360–387 · cross-source dashboards</span></span></summary>
+          <div class="detail-body">
+            <table class="kv">
+              <tr><th><code>grafana:10.2.2</code></th><td>Pinned Grafana image.</td></tr>
+              <tr><th><code>depends_on</code></th><td>Waits for TimescaleDB and Elasticsearch to be healthy. It does not wait for their schemas, templates, or provisioning to be logically complete beyond container startup behavior.</td></tr>
+              <tr><th><code>3000:3000</code></th><td>Host UI at <code>http://localhost:3000</code>.</td></tr>
+              <tr><th><code>GF_SECURITY_ADMIN_USER</code></th><td>Admin username from <code>GRAFANA_USER</code> or default <code>admin</code>.</td></tr>
+              <tr><th><code>GF_SECURITY_ADMIN_PASSWORD</code></th><td>Password from <code>GRAFANA_PASSWORD</code> or insecure default <code>admin123</code>. Initialization values may not overwrite a user already stored in <code>grafana-data</code>.</td></tr>
+              <tr><th><code>ALLOW_SIGN_UP=false</code></th><td>Disables self-service account registration.</td></tr>
+              <tr><th><code>ROOT_URL</code></th><td>Tells Grafana its public base URL is localhost. This must change for a remote hostname, reverse proxy, or HTTPS deployment.</td></tr>
+              <tr><th><code>INSTALL_PLUGINS</code></th><td>Downloads/installs the clock panel and simple JSON data source at startup. This introduces startup-time network and external-version dependency.</td></tr>
+              <tr><th><code>grafana-data</code></th><td>Persists Grafana’s database, installed plugins, and UI state.</td></tr>
+              <tr><th>provisioning mount</th><td>Read-only dashboards/data-source definitions from <code>./docker/grafana/provisioning</code>.</td></tr>
+              <tr><th><code>healthcheck</code></th><td>Uses <code>wget --spider</code> against <code>/api/health</code> every 10 seconds; five failed 5-second checks mark it unhealthy.</td></tr>
+              <tr><th><code>restart / network</code></th><td>Keeps the UI alive and lets it resolve its data stores by service name.</td></tr>
+            </table>
+          </div>
+        </details>
+
+        <details open>
+          <summary><span><h3>kibana</h3><span class="summary-meta">Lines 389–404 · Elasticsearch exploration UI</span></span></summary>
+          <div class="detail-body">
+            <table class="kv">
+              <tr><th><code>kibana:8.11.0</code></th><td>Pinned to exactly match Elasticsearch 8.11.0.</td></tr>
+              <tr><th><code>depends_on</code></th><td>Starts only after Elasticsearch health is green or yellow.</td></tr>
+              <tr><th><code>5601:5601</code></th><td>Host UI at <code>http://localhost:5601</code>.</td></tr>
+              <tr><th><code>ELASTICSEARCH_HOSTS</code></th><td>Internal Elasticsearch address.</td></tr>
+              <tr><th><code>XPACK_SECURITY_ENABLED=false</code></th><td>Aligns Kibana with Elasticsearch’s no-auth development posture.</td></tr>
+              <tr><th><code>SERVER_NAME</code></th><td>Identifies this Kibana server as <code>kibana</code>.</td></tr>
+              <tr><th><code>TELEMETRY_ENABLED=false</code></th><td>Disables Kibana usage telemetry.</td></tr>
+              <tr><th>No volume</th><td>Kibana has no local persistent volume; saved objects normally live in Elasticsearch, whose data is persistent.</td></tr>
+              <tr><th>No healthcheck</th><td>Compose can report the container running before the web UI is ready. Nothing else depends on Kibana health.</td></tr>
+              <tr><th><code>restart / network</code></th><td>Keeps Kibana alive and gives it private connectivity to Elasticsearch.</td></tr>
+            </table>
+          </div>
+        </details>
+      </section>
+
+      <section id="references">
+        <div class="line-ref">QUICK REFERENCE</div>
+        <h2>Published ports</h2>
+        <p class="section-intro">Because mappings omit a host IP, Docker normally binds them on all host interfaces, not only loopback. Firewall rules and Docker Desktop behavior still affect reachability.</p>
+        <div class="table-wrap">
+          <table class="ref-table">
+            <thead><tr><th>Host port</th><th>Service</th><th>Use</th><th>Usually needs host exposure?</th></tr></thead>
+            <tbody>
+              <tr><td>2181</td><td>ZooKeeper</td><td>Client API</td><td>No; Kafka uses the private network.</td></tr>
+              <tr><td>9092</td><td>Kafka</td><td>Internal listener</td><td>No; metadata advertises <code>kafka:9092</code>.</td></tr>
+              <tr><td>9093</td><td>Kafka</td><td>Same-host client listener</td><td>Yes, for host clients.</td></tr>
+              <tr><td>8080</td><td>Kafka UI</td><td>Web UI</td><td>Yes, if operators use it.</td></tr>
+              <tr><td>5432</td><td>TimescaleDB</td><td>PostgreSQL</td><td>Only for host-side DB tools.</td></tr>
+              <tr><td>9200</td><td>Elasticsearch</td><td>REST API</td><td>Only for host-side tools; unsafe on untrusted networks here.</td></tr>
+              <tr><td>9300</td><td>Elasticsearch</td><td>Node transport</td><td>No for this single-node stack.</td></tr>
+              <tr><td>4317 / 4318</td><td>OTel Collector</td><td>OTLP gRPC / HTTP</td><td>Yes, for apps running outside Compose.</td></tr>
+              <tr><td>8888 / 8889</td><td>OTel Collector</td><td>Self metrics / exporter</td><td>Only for host-side Prometheus/debugging.</td></tr>
+              <tr><td>13133 / 55679</td><td>OTel Collector</td><td>Health / zPages</td><td>Only for diagnostics; restrict access.</td></tr>
+              <tr><td>9273</td><td>Telegraf</td><td>Prometheus metrics</td><td>No; Collector scrapes privately.</td></tr>
+              <tr><td>3000</td><td>Grafana</td><td>Web UI</td><td>Yes.</td></tr>
+              <tr><td>5601</td><td>Kibana</td><td>Web UI</td><td>Yes.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="startup">
+        <div class="line-ref">DEPENDENCY SEMANTICS</div>
+        <h2>What happens during <code>docker compose up</code></h2>
+        <ol>
+          <li>Compose creates <code>monitoring-net</code> and the named volumes that do not already exist.</li>
+          <li>ZooKeeper, TimescaleDB, and Elasticsearch can start in parallel because they have no service dependencies.</li>
+          <li>Kafka starts after ZooKeeper becomes healthy.</li>
+          <li>After Kafka becomes healthy, <code>kafka-init</code>, Kafka UI, and the OTel Collector can start. The consumers also need their respective databases healthy.</li>
+          <li><code>elasticsearch-init</code>, logs-consumer, Grafana, and Kibana can all start after Elasticsearch health passes. They do not wait for one another.</li>
+          <li>Telegraf starts after the Collector container starts, not after it becomes healthy.</li>
+          <li>The two init jobs exit; the eleven service containers are intended to continue running.</li>
+        </ol>
+        <p class="callout"><strong>Crucial distinction:</strong> <code>depends_on: condition: service_healthy</code> gates initial start on a healthcheck. It does not create runtime supervision: if Kafka later becomes unhealthy, Compose does not automatically stop or restart its consumers because of that dependency.</p>
+        <h4>What <code>restart: unless-stopped</code> means</h4>
+        <p>Docker restarts a failed or daemon-interrupted long-running container. After an operator explicitly stops a container, it remains stopped until manually started. The init jobs intentionally omit this policy so a successful exit is not treated as something to restart.</p>
+      </section>
+
+      <section id="review">
+        <div class="line-ref">OPERATIONAL READING · NOT JUST YAML</div>
+        <h2>Important findings before treating this as production</h2>
+        <ol class="risk-list">
+          <li><strong>The Elasticsearch init command is likely broken.</strong> Literal quote-only lines wrap the Bash body. Remove those outer quotes; the YAML <code>|</code> block already supplies one command string.</li>
+          <li><strong>Consumers do not depend on init-job completion.</strong> Use <code>condition: service_completed_successfully</code> on the appropriate init job, or make the consumers robustly retry missing topics/aliases.</li>
+          <li><strong>TimescaleDB overrides can break the metrics consumer.</strong> Build its connection string from the same <code>TIMESCALE_*</code> variables rather than hard-coding defaults.</li>
+          <li><strong>Security is development-only.</strong> Kafka is PLAINTEXT, Elasticsearch has no auth/TLS, several admin/data ports are published, and default passwords are embedded in the file.</li>
+          <li><strong>Host bindings are broad.</strong> Use loopback bindings such as <code>127.0.0.1:9200:9200</code> for local-only tools, or place authenticated/TLS reverse proxies and firewall policy in front.</li>
+          <li><strong>Single replicas mean no high availability.</strong> Kafka partitions and Elasticsearch primary shards have no redundant copy. Named volumes protect against container replacement, not disk or host failure.</li>
+          <li><strong>Floating image tags reduce reproducibility.</strong> Pin exact Kafka UI and TimescaleDB versions (ideally immutable digests) before controlled deployment.</li>
+          <li><strong>The 10k–50k events/second target is only a comment.</strong> No CPU/memory limits, disk throughput guarantees, load test, or capacity enforcement exists in this file.</li>
+          <li><strong>Retention can consume substantial disk.</strong> Kafka’s 10 GiB limit is per partition; two 12-partition telemetry topics could each approach roughly 120 GiB before time retention wins, plus other topics and overhead.</li>
+          <li><strong>Not every defined path is active.</strong> There is no trace consumer; <code>alerts</code> and <code>dlq</code> have no visible users here; <code>otel-checkpoint</code> is unused; port 8889’s exporter is configured but not attached to a pipeline.</li>
+          <li><strong>Some healthchecks test configuration or TCP only.</strong> A valid Collector config does not prove Kafka export works; an open ZooKeeper port does not prove higher-level correctness.</li>
+          <li><strong>Linux host monitoring does not equal native Windows monitoring.</strong> The Telegraf mounts and enabled plugins target Linux. Native Windows counters need a Windows agent/config or another collection path.</li>
+          <li><strong>Fixed names and subnet constrain coexistence.</strong> Explicit <code>container_name</code> values can collide with other projects, prevent scaling, and the fixed <code>172.28.0.0/16</code> may conflict with local networks/VPNs.</li>
+          <li><strong>Initialization has “first boot” semantics.</strong> PostgreSQL’s mounted <code>init.sql</code> only runs against an empty data directory. Updating the file later does not migrate an existing named volume.</li>
+        </ol>
+        <p class="callout good"><strong>Bottom line:</strong> the file is valid Compose and communicates a coherent prototype architecture. Its strongest qualities are clear service separation, persistent state, health-gated startup, pinned core versions, explicit topics, and internal DNS. Production readiness requires fixing initialization ordering/script behavior, aligning credentials, reducing exposure, adding security and backups, and proving capacity.</p>
+      </section>
+    </main>
+  </div>
+
+  <footer>
+    <div class="footer-inner">Prepared from <code>docker-compose.yml</code> in this repository. Line references match the 404-line source as inspected on 14 July 2026. Compose syntax was checked with <code>docker compose config --quiet</code>; that validates configuration structure, not runtime behavior.</div>
+  </footer>
+</body>
+</html>
