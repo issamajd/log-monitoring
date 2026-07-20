@@ -10,8 +10,8 @@ The old plan is useful as a long-term architecture, but the build order now cent
 
 | Stage | Name | Outcome |
 |---|---|---|
-| **Milestone 1** | Support Triage Foundation | OpenTelemetry instrumentation, enrichment, Elasticsearch, TimescaleDB, Grafana dashboards, server health, and basic alerts. |
-| **Milestone 2** | Kafka Pipeline & Reliability | Add Kafka as the durable buffer, consumer scaling, dead-letter handling, replay, backpressure, and ingestion reliability views. |
+| **Milestone 1** | Support Triage Foundation | OpenTelemetry instrumentation, single-broker Kafka buffer, enrichment, Elasticsearch, TimescaleDB, Grafana dashboards, server health, and basic alerts. |
+| **Milestone 2** | Pipeline Reliability | Consumer scaling, dead-letter handling, replay tooling, backpressure, and ingestion reliability views on top of the Milestone 1 Kafka pipeline. |
 | **Milestone 3** | Log Intelligence | Richer event processing, deduplication, session/request timelines, pattern grouping, and stronger risky-SQL detection. |
 | **Milestone 4** | Operational Hardening | Offline-bundle polish, backup/restore, upgrade process, role-based access, retention validation, and production runbooks. |
 | **Milestone 5** | Proactive Alerting | Trend, absence, rate-of-change, and correlation alerts once baseline data is trustworthy. |

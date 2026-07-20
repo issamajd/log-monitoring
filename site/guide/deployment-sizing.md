@@ -20,7 +20,7 @@ The full stack should support both the app server and a separate on-prem monitor
 |---|---|---|---|---|
 | **Compact** | 4 cores | 8–12 GB | 500 GB–1 TB SSD | Same-server deployment with strict limits, short retention, and careful alert/dashboard scope. |
 | **Standard** | 4–8 cores | 16–32 GB | 1 TB SSD | Recommended profile for 14–30 days searchable logs on a serious customer deployment. |
-| **Dedicated monitoring** | 8+ cores | 32 GB+ | 1 TB+ SSD | Preferred for higher log volume, Kafka, longer retention, and future proactive features. |
+| **Dedicated monitoring** | 8+ cores | 32 GB+ | 1 TB+ SSD | Preferred for higher log volume, heavier Kafka retention/partitions, longer searchable retention, and future proactive features. |
 
 ## Resource guardrails
 

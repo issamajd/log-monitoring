@@ -13,19 +13,19 @@ The application keeps writing `SystemTrace_*.log` files as a **local backup**, b
 ## Pipeline
 
 ```
- Windows app service ──▶ OpenTelemetry SDK ──▶ OTel Collector ──┬─▶ TimescaleDB   (metrics)
- (API, jobs, BP/DQ,      (traces, metrics,     (receive, batch,  └─▶ Elasticsearch (logs + traces)
-  SQL, errors,            structured logs)      enrich, route)
+ Windows app service ──▶ OpenTelemetry SDK ──▶ OTel Collector ──▶ Kafka ──┬─▶ Logs/Traces consumer ──▶ Elasticsearch
+ (API, jobs, BP/DQ,      (traces, metrics,     (receive, batch,  (durable └─▶ Metrics consumer ─────▶ TimescaleDB
+  SQL, errors,            structured logs)      route)            buffer)
   .NET process)
 
- Telegraf (on the host) ──▶ OTel Collector ──▶ TimescaleDB      (host / server health)
+ Telegraf (on the host) ──▶ OTel Collector ──▶ Kafka ──▶ Metrics consumer ──▶ TimescaleDB   (host / server health)
  (CPU, RAM, disk, network,
   Windows service state)
 ```
 
 Elasticsearch holds searchable events and traces, TimescaleDB holds metrics and time-series summaries, and Grafana serves dashboards and alerts on top of both.
 
-Kafka stays a **later** pipeline stage (Milestone 2). Milestone 1 routes from the collector straight to the stores and can prove instrumentation, enrichment, search, dashboards, and alerts without it.
+**Kafka is part of Milestone 1.** The collector publishes each signal to its own topic (`telemetry-logs`, `telemetry-metrics`, `telemetry-traces`); dedicated consumers subscribe and write to the stores. The buffer decouples ingestion from storage: Elasticsearch or TimescaleDB can restart or fall behind without losing telemetry, and events can be replayed. Milestone 1 runs a **single-broker** Kafka; advanced reliability — consumer scaling, dead-letter handling, replay tooling, backpressure views — matures in Milestone 2.
 
 ## One source per concern — no double collection
 
@@ -83,7 +83,8 @@ This split keeps telemetry lean (the correlation key travels with every event; h
 | OpenTelemetry in the app | Instrumentation helper library exists; **`rndfwcore` is not instrumented** | Add OTel to `rndfwcore` chokepoints (API, jobs, BP, DQ, SQL, errors) with session/user attributes — this is the first workstream; nothing flows until it lands |
 | .NET / process metrics | Runtime + process instrumentation available in the helper library | Enable alongside app instrumentation; **do not** enable Telegraf CLR counters |
 | Host metrics | Telegraf config exists but runs in a container with `win_perf_counters` commented out | Run Telegraf **on the Windows host**; enable `win_perf_counters` + `win_services`; **remove the collector `hostmetrics` receiver** |
-| Collector routing | Collector runs; routes through Kafka (prototype) | Route straight to Elasticsearch / TimescaleDB; Kafka returns in Milestone 2 |
+| Collector → Kafka routing | Collector already publishes to per-signal Kafka topics | Validate topic/partition/retention settings against the deployment profiles |
+| Kafka consumers | Logs and metrics consumers exist from the prototype | Adapt to the final schemas; add traces handling so spans reach Elasticsearch |
 | On-demand enrichment | Not built | Optional read-only SQL Server lookup keyed on `SessionID`, resolved at investigation time |
 | Storage / search | Elasticsearch + TimescaleDB stand up via Docker Compose | Finalize index mappings, retention/ILM, and metric schemas |
 | Dashboards & alerts | Not built | Build the support-first Grafana dashboards and the basic alert rules |

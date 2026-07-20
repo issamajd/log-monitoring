@@ -16,7 +16,7 @@ Milestone 1 is the Support Triage Foundation:
 - Use Elasticsearch for searchable events, TimescaleDB for metrics, and Grafana for dashboards and alerts.
 - Keep data local by default.
 
-Kafka, clustered deployment, and AI/ML anomaly detection are later roadmap items, not Milestone 1 requirements.
+Milestone 1 ships with a single-broker Kafka buffer between the collector and the stores. Clustered deployment and AI/ML anomaly detection remain later roadmap items.
 
 ## Plan Pages
 
