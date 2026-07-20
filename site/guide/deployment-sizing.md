@@ -43,10 +43,10 @@ The full stack should support both the app server and a separate on-prem monitor
 Searchable retention target is 14–30 days. The practical disk estimate should be based on actual daily log volume.
 
 ::: tip Planning formula
-**Searchable log disk ≈ daily raw log size × retention days × 2–3.** The multiplier covers indexing overhead, replicas if any, and operational margin.
+**Searchable log disk ≈ daily telemetry volume × retention days × 2–3.** Daily raw `SystemTrace_*.log` size is a good first proxy for telemetry volume. The multiplier covers indexing overhead, replicas if any, and operational margin.
 :::
 
 - Same-server default should begin with no replicas and conservative shard counts.
-- Raw files can be archived separately after ingestion.
+- `SystemTrace_*.log` backup files rotate and archive on their own schedule, outside the pipeline.
 - Retain SQL text for normal operations, but extract alert/search fields so dashboards don't run expensive text queries every time.
 - High-volume customers may need a dedicated monitoring server or shorter searchable retention.
