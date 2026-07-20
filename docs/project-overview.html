@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Log Monitoring — Project Overview & Assessment</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+  :root{
+    --bg:#f6f7f9; --panel:#ffffff; --ink:#0f172a; --muted:#64748b; --line:#e2e8f0;
+    --brand:#2563eb; --brand-soft:#eff4ff; --good:#059669; --good-soft:#ecfdf5;
+    --warn:#d97706; --warn-soft:#fffbeb; --bad:#dc2626; --bad-soft:#fef2f2;
+    --accent:#7c3aed;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0b1020; --panel:#121a2e; --ink:#e6ebf5; --muted:#94a3b8; --line:#26324b;
+      --brand:#6d9bff; --brand-soft:#16223f; --good:#34d399; --good-soft:#0f2a20;
+      --warn:#fbbf24; --warn-soft:#2a2110; --bad:#f87171; --bad-soft:#2a1414;
+      --accent:#a78bfa;
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:1060px;margin:0 auto;padding:48px 24px 96px}
+  header.hero{margin-bottom:40px}
+  .eyebrow{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brand);font-weight:700}
+  h1{font-size:34px;line-height:1.15;margin:10px 0 8px;letter-spacing:-.02em}
+  .sub{color:var(--muted);font-size:17px;max-width:70ch}
+  h2{font-size:22px;margin:52px 0 6px;letter-spacing:-.01em;display:flex;align-items:center;gap:10px}
+  h2 .n{font-size:12px;font-weight:700;color:var(--brand);background:var(--brand-soft);
+    border:1px solid var(--line);border-radius:6px;padding:2px 8px}
+  h3{font-size:15px;margin:22px 0 6px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+  p{margin:8px 0}
+  .lead{color:var(--muted);max-width:74ch}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.88em;
+    background:var(--brand-soft);border:1px solid var(--line);border-radius:5px;padding:1px 5px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 24px;margin:16px 0;
+    box-shadow:0 1px 2px rgba(15,23,42,.04)}
+  .grid{display:grid;gap:14px}
+  .g2{grid-template-columns:1fr 1fr}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  @media(max-width:760px){.g2,.g3{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+  .card h4{margin:0 0 4px;font-size:15px}
+  .card p{margin:2px 0;color:var(--muted);font-size:13.5px}
+  .tag{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;
+    padding:3px 9px;border-radius:999px;border:1px solid var(--line)}
+  .t-brand{color:var(--brand);background:var(--brand-soft)}
+  .t-good{color:var(--good);background:var(--good-soft)}
+  .t-warn{color:var(--warn);background:var(--warn-soft)}
+  .t-bad{color:var(--bad);background:var(--bad-soft)}
+  .t-accent{color:var(--accent);background:var(--brand-soft)}
+  .mermaid{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;margin:16px 0;overflow-x:auto}
+  table{width:100%;border-collapse:collapse;margin:12px 0;font-size:14px}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:700}
+  tr:last-child td{border-bottom:none}
+  .score{display:flex;align-items:baseline;gap:8px}
+  .score b{font-size:26px;letter-spacing:-.02em}
+  .score span{color:var(--muted);font-size:13px}
+  .bar{height:7px;border-radius:999px;background:var(--line);overflow:hidden;margin-top:8px}
+  .bar > i{display:block;height:100%;border-radius:999px;background:var(--brand)}
+  ul.clean{margin:8px 0;padding-left:18px}
+  ul.clean li{margin:5px 0}
+  .callout{border-left:3px solid var(--brand);background:var(--brand-soft);border-radius:0 10px 10px 0;
+    padding:14px 18px;margin:16px 0}
+  .callout.warn{border-color:var(--warn);background:var(--warn-soft)}
+  .legend{display:flex;flex-wrap:wrap;gap:14px;margin:10px 0 0;font-size:13px;color:var(--muted)}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .dot{width:11px;height:11px;border-radius:3px;display:inline-block}
+  .foot{margin-top:60px;color:var(--muted);font-size:13px;border-top:1px solid var(--line);padding-top:18px}
+  .kpi{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+  .kpi .card{flex:1 1 150px;text-align:center}
+  .kpi b{font-size:22px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <div class="eyebrow">Project Review · 2026-07-20</div>
+  <h1>Log Monitoring</h1>
+  <p class="sub">Support-first observability for on-prem Windows deployments. This page maps the project, its target, and its plan into a single picture — then rates how coherent and buildable it is.</p>
+  <div class="kpi">
+    <div class="card"><b>7.5</b><p>Overall / 10</p></div>
+    <div class="card"><b>M1</b><p>Active milestone</p></div>
+    <div class="card"><b>OTel</b><p>Single telemetry source</p></div>
+    <div class="card"><b>Local</b><p>Data residency default</p></div>
+  </div>
+</header>
+
+<!-- ============ THE TARGET ============ -->
+<h2><span class="n">01</span> The target — what "done" means</h2>
+<p class="lead">The north star is deliberately narrow and human: a <strong>support engineer</strong> should be able to investigate a real customer issue <em>without opening massive raw <code>SystemTrace_*.log</code> files</em>.</p>
+<div class="grid g3">
+  <div class="card"><h4>Answer fast</h4><p>“What failed around this time?” in under 5 minutes.</p></div>
+  <div class="card"><h4>Search, don’t scroll</h4><p>By session, operation, BP/DQ, SQL, component, time window.</p></div>
+  <div class="card"><h4>See slow &amp; risky</h4><p>Slow API/BP/DQ/SQL and risky data-change SQL surfaced automatically.</p></div>
+  <div class="card"><h4>Stay local</h4><p>Data stays on the customer site by default; forwarding is opt-in.</p></div>
+  <div class="card"><h4>Deploy anywhere</h4><p>Same app server <em>or</em> a dedicated monitoring box; online or offline install.</p></div>
+  <div class="card"><h4>Basic alerts</h4><p>Service down, ingestion stopped, disk full, error spikes, slow ops.</p></div>
+</div>
+
+<!-- ============ COMPONENT DIAGRAM ============ -->
+<h2><span class="n">02</span> Component map</h2>
+<p class="lead">One telemetry source: <strong>OpenTelemetry emitted by the app</strong>, plus Telegraf on the host for server health. <code>SystemTrace_*.log</code> files keep being written as a <strong>local backup</strong> but are not ingested — the parser project stays in the repo, unwired.</p>
+<div class="legend">
+  <span><i class="dot" style="background:var(--good)"></i> Milestone 1 (build now)</span>
+  <span><i class="dot" style="background:var(--accent)"></i> Deferred (Milestone 2+)</span>
+  <span><i class="dot" style="background:var(--brand)"></i> Data store</span>
+  <span><i class="dot" style="background:var(--warn)"></i> Presentation &amp; alerting</span>
+</div>
+
+<pre class="mermaid">
+flowchart TB
+  APP["Windows app service<br/>(FWCORE: API, jobs, BP/DQ, SQL)"]
+  OTELSDK["OpenTelemetry SDK<br/>traces · metrics · structured logs<br/>+ .NET runtime/process metrics<br/>+ session/user attributes"]
+  APP --> OTELSDK
+
+  BAK["SystemTrace_*.log files<br/>local backup only — NOT ingested"]:::bak
+  APP -.-> BAK
+
+  COLL["OTel Collector<br/>(receive · batch · route)"]
+  OTELSDK -->|OTLP gRPC| COLL
+  TELE["Telegraf on the Windows host<br/>(CPU · RAM · disk · net · service state)"] --> COLL
+
+  KAFKA(["Kafka durable buffer<br/>(Milestone 2)"]):::later
+  COLL -.->|later| KAFKA
+
+  ES[("Elasticsearch<br/>searchable events + traces + SQL text")]:::store
+  TS[("TimescaleDB<br/>metrics + time-series")]:::store
+  COLL -->|logs + traces| ES
+  COLL -->|metrics| TS
+
+  ENR["SQL Server — optional on-demand lookup<br/>(SessionID → customer/entity context,<br/>read-only, at investigation time)"]:::opt
+
+  GRAF["Grafana<br/>dashboards + alerts"]:::view
+  KIB["Kibana (index/debug)"]:::view
+  ES --> GRAF
+  TS --> GRAF
+  ES --> KIB
+  ENR -.-> GRAF
+  NOTIF["Notifications<br/>email · Teams/Slack webhook"]:::view
+  GRAF --> NOTIF
+
+  classDef later stroke-dasharray:6 4,stroke:#7c3aed,color:#7c3aed,fill:#f5f3ff;
+  classDef opt stroke-dasharray:4 3,stroke:#2563eb,fill:#eff4ff;
+  classDef bak stroke-dasharray:4 3,stroke:#94a3b8,color:#64748b,fill:#f1f5f9;
+  classDef store fill:#eff4ff,stroke:#2563eb,color:#1e3a8a;
+  classDef view fill:#fffbeb,stroke:#d97706,color:#92400e;
+</pre>
+
+<h3>Enrichment happens in the app</h3>
+<p class="lead">The app holds the support context when an event happens, so it attaches safe context (<code>session_id</code>, <code>operation_id</code>, username, environment) <strong>directly as OTel attributes</strong>. Sensitive customer/entity details are <em>not</em> stored per-event — they’re resolved on demand at investigation time through the optional read-only SQL Server lookup.</p>
+
+<h3>One source per concern — no double collection</h3>
+<table>
+  <tr><th>Concern</th><th>Single source</th><th>Removed</th></tr>
+  <tr><td>App / business — API, jobs, BP, DQ, SQL, errors, durations</td><td>OpenTelemetry SDK in the app</td><td>—</td></tr>
+  <tr><td><strong>.NET runtime / process</strong> — GC, heap, threads, exceptions, proc CPU/mem</td><td><code>AddRuntimeInstrumentation()</code> + <code>AddProcessInstrumentation()</code></td><td><span class="tag t-bad">drop</span> Telegraf .NET CLR counters</td></tr>
+  <tr><td><strong>Host / OS / infra</strong> — CPU, RAM, disk, network, Windows service state</td><td>Telegraf, <strong>native on the Windows host</strong></td><td><span class="tag t-bad">drop</span> collector <code>hostmetrics</code> receiver</td></tr>
+  <tr><td>Searchable log events</td><td>OTLP structured logs</td><td><span class="tag t-bad">drop</span> SystemTrace file ingestion (files stay as backup)</td></tr>
+</table>
+
+<div class="callout warn">
+  <strong>Two divergences the code still has.</strong> (1) <code>docker-compose.yml</code> + the two consumers still wire the earlier <strong>Kafka-centric prototype</strong> (<code>OTLP → Kafka → consumers → ES/Timescale</code>); the plan defers Kafka to Milestone&nbsp;2 and writes straight to the stores. (2) Host metrics are collected <strong>twice</strong> today — Telegraf <em>and</em> the collector’s <code>hostmetrics</code> receiver — both inside Linux containers, so neither sees the real Windows host. The plan names one owner per signal and moves Telegraf onto the host. And note: <strong>nothing flows yet</strong> — <code>rndfwcore</code> is not instrumented, so app instrumentation is workstream #1.
+</div>
+
+<!-- ============ SUPPORT WORKFLOW ============ -->
+<h2><span class="n">03</span> How support actually uses it</h2>
+<p class="lead">The dashboards are shaped around one triage path, not around infrastructure.</p>
+<pre class="mermaid">
+flowchart LR
+  A["Pick customer /<br/>site / environment"] --> B["Pick reported<br/>time window"]
+  B --> C["Scan summary panels<br/>errors · slow · risky SQL ·<br/>service · ingestion"]
+  C --> D["Filter<br/>SessionID · OperationID ·<br/>BP/DQ · SQL · component"]
+  D --> E["Open session /<br/>operation timeline"]
+  E --> F["Export &amp; share<br/>filtered events"]
+  style A fill:#eff4ff,stroke:#2563eb
+  style F fill:#ecfdf5,stroke:#059669
+</pre>
+
+<!-- ============ ROADMAP ============ -->
+<h2><span class="n">04</span> Milestone sequence</h2>
+<table>
+  <tr><th>Stage</th><th>Name</th><th>Outcome</th></tr>
+  <tr><td><span class="tag t-good">M1 · now</span></td><td>Support Triage Foundation</td><td>OpenTelemetry instrumentation, enrichment, ES + Timescale + Grafana, server health, basic alerts.</td></tr>
+  <tr><td><span class="tag t-accent">M2</span></td><td>Kafka Pipeline &amp; Reliability</td><td>Durable buffer, consumer scaling, dead-letter, replay, backpressure.</td></tr>
+  <tr><td><span class="tag t-accent">M3</span></td><td>Log Intelligence</td><td>Better parsing, dedup, timelines, pattern grouping, stronger risky-SQL detection.</td></tr>
+  <tr><td><span class="tag t-accent">M4</span></td><td>Operational Hardening</td><td>Offline bundle, backup/restore, upgrades, RBAC, runbooks.</td></tr>
+  <tr><td><span class="tag t-accent">M5</span></td><td>Proactive Alerting</td><td>Trend, absence, rate-of-change, correlation alerts.</td></tr>
+  <tr><td><span class="tag t-accent">M6</span></td><td>AI/ML Insights</td><td>Anomaly detection &amp; forecasting once data is trusted.</td></tr>
+</table>
+
+<!-- ============ ASSESSMENT ============ -->
+<h2><span class="n">05</span> My rating</h2>
+<p class="lead">Scored as a <em>plan + early codebase</em>, not a shipped product. The thinking is unusually mature; the gap is that the code hasn't caught up to the plan yet.</p>
+
+<div class="grid g2">
+  <div class="panel">
+    <h3>Strategy &amp; scope</h3>
+    <div class="score"><b>9</b><span>/ 10</span></div>
+    <div class="bar"><i style="width:90%"></i></div>
+    <p class="lead" style="margin-top:10px">Picking <strong>support triage</strong> as the first user and ruthlessly deferring Kafka, HA, and AI/ML is exactly the right call. Non-goals are written down explicitly — rare and valuable.</p>
+  </div>
+  <div class="panel">
+    <h3>Architecture fit</h3>
+    <div class="score"><b>8</b><span>/ 10</span></div>
+    <div class="bar"><i style="width:80%"></i></div>
+    <p class="lead" style="margin-top:10px">A single OpenTelemetry pipeline with app-level enrichment is clean and correlation-friendly. ES-for-search / Timescale-for-metrics is a standard, defensible split. Each component is designed to stand alone.</p>
+  </div>
+  <div class="panel">
+    <h3>Documentation</h3>
+    <div class="score"><b>9</b><span>/ 10</span></div>
+    <div class="bar"><i style="width:90%"></i></div>
+    <p class="lead" style="margin-top:10px">The VitePress site is genuinely good: field model, thresholds, sizing profiles, security posture, and success criteria all specified. A new engineer could onboard from it.</p>
+  </div>
+  <div class="panel">
+    <h3>Code ↔ plan alignment</h3>
+    <div class="score"><b>5</b><span>/ 10</span></div>
+    <div class="bar"><i style="width:50%;background:var(--warn)"></i></div>
+    <p class="lead" style="margin-top:10px">The main risk. Compose + consumers implement the <em>old</em> Kafka prototype the plan defers. Parser + instrumentation library are solid, but end-to-end M1 isn’t wired to the documented flow yet.</p>
+  </div>
+  <div class="panel">
+    <h3>Implementation maturity</h3>
+    <div class="score"><b>6</b><span>/ 10</span></div>
+    <div class="bar"><i style="width:60%;background:var(--warn)"></i></div>
+    <p class="lead" style="margin-top:10px">Real, working pieces exist: a tested pipe-delimited parser, a full OTel config library (traces/metrics/logs, SQL client, correlation middleware, custom metrics), and two consumers. But no Grafana dashboards, alerts, or enrichment yet.</p>
+  </div>
+  <div class="panel">
+    <h3>Risk &amp; security posture</h3>
+    <div class="score"><b>8</b><span>/ 10</span></div>
+    <div class="bar"><i style="width:80%"></i></div>
+    <p class="lead" style="margin-top:10px">Local-first, read-only enrichment, opt-in forwarding. Redaction pushed to the app layer is a defensible scope call — but it means the pipeline trusts upstream masking, which must be verified.</p>
+  </div>
+</div>
+
+<h3 style="margin-top:34px">Strengths</h3>
+<ul class="clean">
+  <li><strong>Correct altitude.</strong> The plan shrinks the next step while keeping the north star — the roadmap literally says so.</li>
+  <li><strong>Concrete success criteria &amp; thresholds</strong> (API &gt;3s warn / &gt;10s crit; SQL &gt;1s / &gt;5s), so “done” is testable.</li>
+  <li><strong>Deployment realism.</strong> Same-server vs dedicated profiles, online vs offline install, disk-sizing formula — this is on-prem reality, not slideware.</li>
+  <li><strong>Working OTel helper library</strong> (traces, metrics, logs, correlation middleware) ready to drop into the app; the SystemTrace parser stays parked in the repo as a fallback.</li>
+</ul>
+
+<h3>Risks &amp; gaps</h3>
+<ul class="clean">
+  <li><span class="tag t-bad">top risk</span> &nbsp;<strong>Code lags the plan.</strong> The decision is made — M1 routes collector → stores directly, Kafka returns in M2 — but the compose file and consumers still implement the Kafka path, and the app emits no OTel yet.</li>
+  <li><strong>The whole value layer is unbuilt:</strong> Grafana dashboards, the 7 alert rules, and SQL-Server session enrichment are specified but not implemented.</li>
+  <li><strong>Unvalidated assumptions:</strong> real daily log volume, the exact safe session-lookup query, and final ES index mappings/shards — all flagged as open questions.</li>
+  <li><strong>Redaction trust boundary:</strong> if the app doesn’t mask a secret, the pipeline stores it in plaintext by design. Needs a verification step, at least a sampling check.</li>
+</ul>
+
+<div class="callout">
+  <strong>Bottom line — 7.5 / 10.</strong> This is a well-reasoned plan with a promising but partial implementation. The strategy and docs are the strongest part; the biggest lever is reconciling <code>docker-compose.yml</code> and the consumers to the documented Milestone&nbsp;1 flow, then building the Grafana + enrichment layer that actually delivers the support-triage value.
+</div>
+
+<div class="foot">
+  Generated from the repository’s VitePress plan (<code>site/guide/*</code>), <code>docker-compose.yml</code>, and <code>src/</code>. Diagrams render with Mermaid. Milestone&nbsp;1 = Support Triage Foundation · active branch <code>master</code>.
+</div>
+
+</div>
+<script>
+  const dark = matchMedia('(prefers-color-scheme: dark)').matches;
+  mermaid.initialize({startOnLoad:true, theme: dark ? 'dark' : 'neutral',
+    flowchart:{curve:'basis'}, securityLevel:'loose'});
+</script>
+</body>
+</html>

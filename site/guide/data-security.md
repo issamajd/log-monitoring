@@ -13,10 +13,11 @@ SQL-parameter and secret masking is done in the **application / instrumentation 
 ## Session enrichment
 
 - `SessionID` is the primary support correlation key.
-- The system can connect **read-only** to SQL Server to resolve session context.
-- Enrichment should cache lookups and avoid heavy queries against the app database.
+- Safe context (session, operation, username, environment) is attached **by the app itself** as OTel attributes before telemetry leaves the process.
+- Sensitive or heavy context (customer/entity details) is resolved **on demand** at investigation time via a **read-only** SQL Server connection, and is not stored per-event.
+- The lookup should cache results and avoid heavy queries against the app database.
 - A customer can disable DB enrichment if required.
-- Only safe support fields are copied into monitoring storage.
+- Only safe support fields are ever copied into monitoring storage.
 
 ## Forwarding policy
 

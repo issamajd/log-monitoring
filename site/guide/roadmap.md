@@ -10,9 +10,9 @@ The old plan is useful as a long-term architecture, but the build order now cent
 
 | Stage | Name | Outcome |
 |---|---|---|
-| **Milestone 1** | Support Triage Foundation | Dual-source ingestion, enrichment, Elasticsearch, TimescaleDB, Grafana dashboards, server health, and basic alerts. |
+| **Milestone 1** | Support Triage Foundation | OpenTelemetry instrumentation, enrichment, Elasticsearch, TimescaleDB, Grafana dashboards, server health, and basic alerts. |
 | **Milestone 2** | Kafka Pipeline & Reliability | Add Kafka as the durable buffer, consumer scaling, dead-letter handling, replay, backpressure, and ingestion reliability views. |
-| **Milestone 3** | Log Intelligence | Better parsing, enrichment, deduplication, session/request timelines, pattern grouping, and stronger risky-SQL detection. |
+| **Milestone 3** | Log Intelligence | Richer event processing, deduplication, session/request timelines, pattern grouping, and stronger risky-SQL detection. |
 | **Milestone 4** | Operational Hardening | Offline-bundle polish, backup/restore, upgrade process, role-based access, retention validation, and production runbooks. |
 | **Milestone 5** | Proactive Alerting | Trend, absence, rate-of-change, and correlation alerts once baseline data is trustworthy. |
 | **Milestone 6** | AI/ML Insights | Anomaly detection, forecasting, and model monitoring once data quality and operational usage are proven. |
@@ -29,7 +29,7 @@ The old plan is useful as a long-term architecture, but the build order now cent
 
 ## Change from the original plan
 
-- Start with existing `SystemTrace_*.log` ingestion plus OpenTelemetry.
+- All telemetry comes from OpenTelemetry instrumentation; `SystemTrace_*.log` files stay as a local backup and are not ingested.
 - Support team is the first user, not platform administrators.
 - Same-server Docker deployment is a first-class profile.
 - Clustered deployment and HA are later.
@@ -41,6 +41,5 @@ The old plan is useful as a long-term architecture, but the build order now cent
 - Exact daily log volume per typical customer.
 - Exact session lookup query and safe user/context fields.
 - Final Elasticsearch index mappings and shard strategy.
-- Whether Milestone 1 writes directly to Elasticsearch/TimescaleDB or routes through a lightweight local queue before Kafka.
 - Exact offline-installer packaging method.
 - Threshold defaults after testing with real customer logs.

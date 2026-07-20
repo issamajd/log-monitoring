@@ -2,43 +2,46 @@
 title: Architecture
 ---
 
-# Dual-source telemetry pipeline
+# OpenTelemetry-first telemetry pipeline
 
-The system should not choose between existing logs and OpenTelemetry. It uses **both**: logs give immediate value for current deployments, and OpenTelemetry gives cleaner structured traces and metrics going forward.
+All application telemetry comes from **OpenTelemetry instrumentation in the app code**: structured logs, traces, and metrics, emitted through one pipeline into purpose-built stores.
 
-## Milestone 1 flow
+::: info SystemTrace files: backup only
+The application keeps writing `SystemTrace_*.log` files as a **local backup**, but the monitoring system does **not** ingest them — they are not parsed, not fed to Elasticsearch, and not part of the pipeline. The `SystemTraceParser` project stays in the repository (unwired) in case that decision is revisited.
+:::
 
-Two source lanes feed a shared collector and split into the right store for each signal type.
+## Pipeline
 
 ```
- OpenTelemetry lane
- ───────────────────
- Windows app service ──▶ OpenTelemetry SDK ──▶ OTel Collector ──▶ TimescaleDB
- (API, jobs, BP/DQ,      (traces, metrics,     (receive, batch,   (metrics,
-  SQL, errors)            structured logs)      enrich, route)     summaries)
+ Windows app service ──▶ OpenTelemetry SDK ──▶ OTel Collector ──┬─▶ TimescaleDB   (metrics)
+ (API, jobs, BP/DQ,      (traces, metrics,     (receive, batch,  └─▶ Elasticsearch (logs + traces)
+  SQL, errors,            structured logs)      enrich, route)
+  .NET process)
 
- Log lane
- ────────
- SystemTrace log files ──▶ Log parser agent ──▶ Elasticsearch ──▶ Grafana
- (large pipe-delimited     (tail, parse,        (searchable logs,  (dashboards,
-  logs from the app)        enrich sessions)     SQL text, timelines) alerts)
+ Telegraf (on the host) ──▶ OTel Collector ──▶ TimescaleDB      (host / server health)
+ (CPU, RAM, disk, network,
+  Windows service state)
 ```
 
-Kafka is intentionally a **later** pipeline stage. It stays part of the target architecture, but Milestone 1 can prove parsing, enrichment, search, dashboards, and alerts first.
+Elasticsearch holds searchable events and traces, TimescaleDB holds metrics and time-series summaries, and Grafana serves dashboards and alerts on top of both.
 
-## SystemTrace parser
+Kafka stays a **later** pipeline stage (Milestone 2). Milestone 1 routes from the collector straight to the stores and can prove instrumentation, enrichment, search, dashboards, and alerts without it.
 
-The sample log format is pipe-delimited and includes structured values that should be extracted into fields rather than treated as plain text:
+## One source per concern — no double collection
 
-- Timestamp with timezone.
-- Log type such as Trace or Performance.
-- Component / category and event name.
-- Service / module / class / method context.
-- `SessionID`, `ClientRequestTranID`, `OperationID`, and thread ID.
-- Total elapsed and last-log elapsed.
-- Message and data payload.
-- SQL ID, transaction ID, execution time, rows affected, result summary, connection string.
-- BP / DQ names and method names.
+Every signal has exactly **one** owner. This removes the redundancy that exists in the current prototype.
+
+| Concern | Single source | Explicitly removed |
+|---|---|---|
+| App / business signals — API, jobs, BP, DQ, SQL, errors, durations | OpenTelemetry SDK in the app | — |
+| **.NET runtime / process health** — GC, heap, thread pool, exceptions, process CPU/memory | OTel `AddRuntimeInstrumentation()` + `AddProcessInstrumentation()` | Telegraf `.NET CLR` `win_perf_counters` |
+| **Host / OS / infrastructure** — CPU, RAM, disk space, disk I/O, network, Windows service state | **Telegraf, running natively on the Windows host** | OTel Collector `hostmetrics` receiver |
+| Searchable log events | OTLP structured logs | SystemTrace file ingestion |
+
+::: info Why these choices
+- **.NET metrics via OTel**, not Telegraf: runtime metrics ride the same pipeline as traces and app metrics, correlated by resource attributes, tagged to *this* service, with no separate Windows-only counter agent. A GC pause then lines up with the slow operation it caused.
+- **Host metrics via Telegraf on the host**, not the collector's `hostmetrics` receiver: a containerized collector only measures its own Linux VM, not the real Windows app server. Native Telegraf with `win_perf_counters` + `win_services` sees the true host and the FWCORE service.
+:::
 
 ## OpenTelemetry instrumentation
 
@@ -50,6 +53,18 @@ Instrumentation should be added across the app, not only around HTTP calls:
 - **DQ spans** — query object name, method, operation type.
 - **SQL spans** — SQL text (masked at the app level), execution time, rows affected, danger flags.
 - **Metrics** — request counts, error counts, operation duration, queue/job runs, ingestion health.
+- **.NET runtime / process metrics** — GC, heap, thread pool, exceptions, process CPU/memory (the single source for .NET health).
+
+## Enrichment: at the source, in the app
+
+The app already holds the support context at the moment an event happens (`UserName`, `SessionGuid`, operation), so it attaches that context **directly as OTel attributes** before telemetry leaves the process — no lookup, no cache, no extra component.
+
+| Context | How it is enriched |
+|---|---|
+| Cheap, safe, always useful — `session_id`, `operation_id`, `client_request_tran_id`, username, environment | The app emits it directly as span/log/resource attributes. |
+| Sensitive or heavy — customer/entity details, business context | **Optional on-demand lookup** at investigation time via a read-only SQL Server connection, resolved only for the sessions support actually examines and **not stored per-event**. |
+
+This split keeps telemetry lean (the correlation key travels with every event; heavy context does not), and keeps personal data out of monitoring storage by default. The on-demand lookup is read-only, cacheable, and can be disabled per customer — see [Data & security](/guide/data-security). It is a **lookup** use of SQL Server, not SQL Server performance monitoring, which remains a non-goal.
 
 ## Field model
 
@@ -61,6 +76,19 @@ Instrumentation should be added across the app, not only around HTTP calls:
 | SQL | `sql_operation`, `sql_text`, `tables`, `execution_ms`, `rows_affected`, `danger_flags` | Search slow and risky SQL. |
 | Outcome | `severity`, `status`, `error_type`, `message`, `duration_ms` | Drive triage, dashboards, and alerts. |
 
+## Current state vs. what is left
+
+| Component | What we have now | What needs to be done |
+|---|---|---|
+| OpenTelemetry in the app | Instrumentation helper library exists; **`rndfwcore` is not instrumented** | Add OTel to `rndfwcore` chokepoints (API, jobs, BP, DQ, SQL, errors) with session/user attributes — this is the first workstream; nothing flows until it lands |
+| .NET / process metrics | Runtime + process instrumentation available in the helper library | Enable alongside app instrumentation; **do not** enable Telegraf CLR counters |
+| Host metrics | Telegraf config exists but runs in a container with `win_perf_counters` commented out | Run Telegraf **on the Windows host**; enable `win_perf_counters` + `win_services`; **remove the collector `hostmetrics` receiver** |
+| Collector routing | Collector runs; routes through Kafka (prototype) | Route straight to Elasticsearch / TimescaleDB; Kafka returns in Milestone 2 |
+| On-demand enrichment | Not built | Optional read-only SQL Server lookup keyed on `SessionID`, resolved at investigation time |
+| Storage / search | Elasticsearch + TimescaleDB stand up via Docker Compose | Finalize index mappings, retention/ILM, and metric schemas |
+| Dashboards & alerts | Not built | Build the support-first Grafana dashboards and the basic alert rules |
+| SystemTrace parser | Working pipe-delimited parser with unit tests | **Nothing** — kept in the repository unwired; SystemTrace files are a local backup and are not ingested |
+
 ::: info Architecture principle
-Each component should be useful on its own: the parser produces validated events, the OTel package emits good telemetry, the collector routes reliably, and dashboards still explain what is happening if one data source is temporarily missing.
+Each component should be useful on its own: the OTel package emits good telemetry, the collector routes reliably, and dashboards still explain what is happening if one data source is temporarily missing.
 :::

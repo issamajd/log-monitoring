@@ -15,17 +15,14 @@ This project is for our own on-prem customer deployments, where the application 
 
 ## Direction
 
-The original plan has a solid backbone, but it needs to be refocused around current reality: very large existing application logs plus direct OpenTelemetry instrumentation.
+The original plan has a solid backbone, but it needs to be refocused around a single, clean telemetry source: direct OpenTelemetry instrumentation in the application.
 
 - Keep Elasticsearch, TimescaleDB, Grafana, OpenTelemetry, and Kafka in the target architecture.
 - Make Milestone 1 **support-first**, not AI-first or cluster-first.
 - Support both same-server and separate monitoring-server deployments.
 - Use Docker Compose as the primary deployment model.
 
-The first pipeline must ingest **both** telemetry sources:
-
-- **Existing `SystemTrace_*.log` files** — they already contain API, BP, DQ, SQL, session, operation, and timing details.
-- **OpenTelemetry from app code** — we can modify the application to add better correlation, traces, metrics, and structured events.
+All telemetry comes from **OpenTelemetry emitted by app code** — traces, metrics, and structured, correlated log events. The existing `SystemTrace_*.log` files keep being written as a **local backup**, but the pipeline does not ingest them.
 
 ## What the system should answer
 
@@ -69,7 +66,7 @@ Secret and SQL-parameter masking happens in the **application / instrumentation 
 These pages are the working plan and should be revised as implementation decisions become real code and measured results.
 
 - **[Milestone 1](/guide/milestone-1)** — the first support-ready release.
-- **[Architecture](/guide/architecture)** — the dual-source telemetry pipeline.
+- **[Architecture](/guide/architecture)** — the OpenTelemetry-first telemetry pipeline.
 - **[Deployment & sizing](/guide/deployment-sizing)** — same-server and dedicated-server profiles.
 - **[Support workflows](/guide/support-workflows)** — the first dashboards and investigation paths.
 - **[Data & security](/guide/data-security)** — residency, enrichment, and forwarding rules.

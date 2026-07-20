@@ -8,11 +8,11 @@ The current plan lives in the VitePress docs site under [`site/`](site/). Run `n
 
 Milestone 1 is the Support Triage Foundation:
 
-- Ingest existing `SystemTrace_*.log` files.
-- Add OpenTelemetry instrumentation to FWCORE chokepoints.
+- Add OpenTelemetry instrumentation to FWCORE chokepoints — the single telemetry source.
+- Keep writing `SystemTrace_*.log` files as a local backup; the pipeline does not ingest them.
 - Search errors by time, session, operation, BP, DQ, SQL, and component.
 - Surface slow API, BP, DQ, SQL, and background service work.
-- Redact SQL parameters, passwords, tokens, API keys, and connection-string credentials.
+- Rely on app-level masking of SQL parameters and secrets; the pipeline stores what it receives.
 - Use Elasticsearch for searchable events, TimescaleDB for metrics, and Grafana for dashboards and alerts.
 - Keep data local by default.
 
