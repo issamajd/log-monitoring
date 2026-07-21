@@ -1,0 +1,289 @@
+using Google.Protobuf;
+using OpenTelemetry.Proto.Collector.Trace.V1;
+using OpenTelemetry.Proto.Trace.V1;
+using LogMonitoring.Consumers.Traces.Models;
+
+namespace LogMonitoring.Consumers.Traces.Services;
+
+/// <summary>
+/// Interface for parsing traces from various formats.
+/// </summary>
+public interface ITracesParser
+{
+    /// <summary>
+    /// Parses traces from raw bytes (OTLP proto format).
+    /// </summary>
+    List<SpanRecord> Parse(byte[] data);
+}
+
+/// <summary>
+/// Parses OTLP proto-encoded traces into SpanRecord objects.
+/// </summary>
+public class OtlpTracesParser : ITracesParser
+{
+    private readonly ILogger<OtlpTracesParser> _logger;
+
+    public OtlpTracesParser(ILogger<OtlpTracesParser> logger)
+    {
+        _logger = logger;
+    }
+
+    public List<SpanRecord> Parse(byte[] data)
+    {
+        var result = new List<SpanRecord>();
+
+        try
+        {
+            var request = ExportTraceServiceRequest.Parser.ParseFrom(data);
+
+            foreach (var resourceSpans in request.ResourceSpans)
+            {
+                // Extract resource attributes
+                var resourceAttrs = ExtractResourceAttributes(resourceSpans);
+
+                foreach (var scopeSpans in resourceSpans.ScopeSpans)
+                {
+                    foreach (var span in scopeSpans.Spans)
+                    {
+                        var record = ConvertSpanRecord(span, resourceAttrs);
+                        result.Add(record);
+                    }
+                }
+            }
+        }
+        catch (InvalidProtocolBufferException ex)
+        {
+            _logger.LogWarning(ex, "Failed to parse OTLP traces proto");
+        }
+
+        return result;
+    }
+
+    private static ResourceAttributes ExtractResourceAttributes(
+        OpenTelemetry.Proto.Trace.V1.ResourceSpans resourceSpans)
+    {
+        var attrs = new ResourceAttributes();
+        var resourceDict = new Dictionary<string, object>();
+
+        foreach (var attr in resourceSpans.Resource.Attributes)
+        {
+            var value = GetAttributeValue(attr.Value);
+            if (value != null)
+            {
+                resourceDict[attr.Key] = value;
+            }
+
+            switch (attr.Key)
+            {
+                case "service.name":
+                    attrs.ServiceName = attr.Value.StringValue;
+                    break;
+                case "service.version":
+                    attrs.ServiceVersion = attr.Value.StringValue;
+                    break;
+                case "host.name":
+                    attrs.HostName = attr.Value.StringValue;
+                    break;
+                case "deployment.environment":
+                    attrs.Environment = attr.Value.StringValue;
+                    break;
+            }
+        }
+
+        attrs.ResourceDict = resourceDict;
+        return attrs;
+    }
+
+    private static SpanRecord ConvertSpanRecord(
+        Span span,
+        ResourceAttributes resourceAttrs)
+    {
+        var statusCode = span.Status == null ? "UNSET" : MapStatusCode(span.Status.Code);
+        var record = new SpanRecord
+        {
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds((long)(span.StartTimeUnixNano / 1_000_000)),
+            EndTimestamp = DateTimeOffset.FromUnixTimeMilliseconds((long)(span.EndTimeUnixNano / 1_000_000)),
+            DurationMs = (span.EndTimeUnixNano - span.StartTimeUnixNano) / 1_000_000.0,
+            TraceId = span.TraceId.IsEmpty ? null : ConvertBytesToHex(span.TraceId),
+            SpanId = span.SpanId.IsEmpty ? null : ConvertBytesToHex(span.SpanId),
+            ParentSpanId = span.ParentSpanId.IsEmpty ? null : ConvertBytesToHex(span.ParentSpanId),
+            Name = span.Name,
+            Kind = MapSpanKind(span.Kind),
+            StatusCode = statusCode,
+            StatusMessage = span.Status?.Message,
+            Error = statusCode == "ERROR",
+            ServiceName = resourceAttrs.ServiceName,
+            ServiceVersion = resourceAttrs.ServiceVersion,
+            HostName = resourceAttrs.HostName,
+            Environment = resourceAttrs.Environment,
+            Resource = resourceAttrs.ResourceDict
+        };
+
+        // Extract attributes
+        foreach (var attr in span.Attributes)
+        {
+            var value = GetAttributeValue(attr.Value);
+            if (value != null)
+            {
+                record.Attributes[attr.Key] = value;
+
+                // Extract known attributes
+                switch (attr.Key)
+                {
+                    case "session.id":
+                        record.SessionId = value.ToString();
+                        break;
+                    case "operation.id":
+                        record.OperationId = value.ToString();
+                        break;
+                    case "client_request_tran_id":
+                        record.ClientRequestTranId = value.ToString();
+                        break;
+                    case "enduser.id":
+                        record.UserName = value.ToString();
+                        break;
+                    case "bp.name":
+                        record.BpName = value.ToString();
+                        break;
+                    case "bp.method":
+                        record.BpMethod = value.ToString();
+                        break;
+                    case "bp.result":
+                        record.BpResult = value.ToString();
+                        break;
+                    case "dq.name":
+                        record.DqName = value.ToString();
+                        break;
+                    case "dq.method":
+                        record.DqMethod = value.ToString();
+                        break;
+                    case "db.operation":
+                        record.DbOperation = value.ToString();
+                        break;
+                    case "db.statement":
+                        record.DbStatement = value.ToString();
+                        break;
+                    case "db.rows_affected":
+                        record.DbRowsAffected = ConvertToDouble(value);
+                        break;
+                    case "rndfw.sql.danger_flags":
+                        record.SqlDangerFlags = value.ToString();
+                        break;
+                    case "rndfw.sql.id":
+                        record.SqlId = value.ToString();
+                        break;
+                    case "rndfw.sql.transaction_id":
+                        record.SqlTransactionId = value.ToString();
+                        break;
+                    case "db.system":
+                        record.DbSystem = value.ToString();
+                        break;
+                    case "db.name":
+                        record.DbName = value.ToString();
+                        break;
+                    case "job.name":
+                        record.JobName = value.ToString();
+                        break;
+                    case "job.queue":
+                        record.JobQueue = value.ToString();
+                        break;
+                    case "job.run_id":
+                        record.JobRunId = value.ToString();
+                        break;
+                    case "job.status":
+                        record.JobStatus = value.ToString();
+                        break;
+                    case "rndfw.transport":
+                        record.Transport = value.ToString();
+                        break;
+                    case "client.address":
+                        record.ClientAddress = value.ToString();
+                        break;
+                }
+            }
+        }
+
+        foreach (var spanEvent in span.Events)
+        {
+            var eventRecord = new SpanEvent
+            {
+                Name = spanEvent.Name,
+                Timestamp = DateTimeOffset.FromUnixTimeMilliseconds((long)(spanEvent.TimeUnixNano / 1_000_000))
+            };
+
+            foreach (var attr in spanEvent.Attributes)
+            {
+                var value = GetAttributeValue(attr.Value);
+                if (value != null)
+                {
+                    eventRecord.Attributes[attr.Key] = value;
+                }
+            }
+
+            record.Events.Add(eventRecord);
+        }
+
+        return record;
+    }
+
+    private static object? GetAttributeValue(OpenTelemetry.Proto.Common.V1.AnyValue value)
+    {
+        return value.ValueCase switch
+        {
+            OpenTelemetry.Proto.Common.V1.AnyValue.ValueOneofCase.StringValue => value.StringValue,
+            OpenTelemetry.Proto.Common.V1.AnyValue.ValueOneofCase.IntValue => value.IntValue,
+            OpenTelemetry.Proto.Common.V1.AnyValue.ValueOneofCase.DoubleValue => value.DoubleValue,
+            OpenTelemetry.Proto.Common.V1.AnyValue.ValueOneofCase.BoolValue => value.BoolValue,
+            _ => null
+        };
+    }
+
+    private static double? ConvertToDouble(object value)
+    {
+        try
+        {
+            return Convert.ToDouble(value);
+        }
+        catch (Exception ex) when (ex is InvalidCastException or FormatException or OverflowException)
+        {
+            return null;
+        }
+    }
+
+    private static string MapSpanKind(Span.Types.SpanKind kind)
+    {
+        return kind switch
+        {
+            Span.Types.SpanKind.Internal => "INTERNAL",
+            Span.Types.SpanKind.Server => "SERVER",
+            Span.Types.SpanKind.Client => "CLIENT",
+            Span.Types.SpanKind.Producer => "PRODUCER",
+            Span.Types.SpanKind.Consumer => "CONSUMER",
+            _ => "UNSPECIFIED"
+        };
+    }
+
+    private static string MapStatusCode(Status.Types.StatusCode statusCode)
+    {
+        return statusCode switch
+        {
+            Status.Types.StatusCode.Ok => "OK",
+            Status.Types.StatusCode.Error => "ERROR",
+            _ => "UNSET"
+        };
+    }
+
+    private static string ConvertBytesToHex(ByteString bytes)
+    {
+        return Convert.ToHexString(bytes.ToByteArray()).ToLowerInvariant();
+    }
+
+    private class ResourceAttributes
+    {
+        public string? ServiceName { get; set; }
+        public string? ServiceVersion { get; set; }
+        public string? HostName { get; set; }
+        public string? Environment { get; set; }
+        public Dictionary<string, object> ResourceDict { get; set; } = new();
+    }
+}

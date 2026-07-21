@@ -117,10 +117,12 @@ public class LogsConsumerWorker : BackgroundService
                 {
                     if (batch.Count > 0)
                     {
-                        await FlushBatchAsync(batch, stoppingToken);
-                        _consumer.Commit();
-                        batch.Clear();
-                        lastFlush = DateTime.UtcNow;
+                        if (await FlushBatchAsync(batch, stoppingToken))
+                        {
+                            _consumer.Commit();
+                            batch.Clear();
+                            lastFlush = DateTime.UtcNow;
+                        }
                     }
                 }
             }
@@ -134,35 +136,52 @@ public class LogsConsumerWorker : BackgroundService
         // Final flush
         if (batch.Count > 0)
         {
-            await FlushBatchAsync(batch, CancellationToken.None);
-            _consumer?.Commit();
+            if (await FlushBatchAsync(batch, CancellationToken.None))
+            {
+                _consumer?.Commit();
+            }
         }
     }
 
-    private async Task FlushBatchAsync(List<LogRecord> batch, CancellationToken cancellationToken)
+    private async Task<bool> FlushBatchAsync(List<LogRecord> batch, CancellationToken cancellationToken)
     {
-        try
+        for (var attempt = 1; attempt <= 3; attempt++)
         {
-            var sw = System.Diagnostics.Stopwatch.StartNew();
-            await _logsRepository.IndexBatchAsync(batch, cancellationToken);
-            sw.Stop();
+            try
+            {
+                var sw = System.Diagnostics.Stopwatch.StartNew();
+                await _logsRepository.IndexBatchAsync(batch, cancellationToken);
+                sw.Stop();
 
-            _logger.LogInformation(
-                "Indexed {Count} logs to Elasticsearch in {ElapsedMs}ms",
-                batch.Count,
-                sw.ElapsedMilliseconds);
+                _logger.LogInformation(
+                    "Indexed {Count} logs to Elasticsearch in {ElapsedMs}ms",
+                    batch.Count,
+                    sw.ElapsedMilliseconds);
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                if (attempt == 3)
+                {
+                    _logger.LogError(ex, "Failed to index {Count} logs to Elasticsearch", batch.Count);
+                    // TODO: Send to dead letter queue
+                    return false;
+                }
+
+                await Task.Delay(TimeSpan.FromMilliseconds(500 * attempt), cancellationToken);
+            }
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to index {Count} logs to Elasticsearch", batch.Count);
-            // TODO: Send to dead letter queue
-        }
+
+        return false;
     }
 
     public override async Task StopAsync(CancellationToken cancellationToken)
     {
         _logger.LogInformation("Logs Consumer stopping...");
-        _consumer?.Close();
+        // Let ExecuteAsync finish (final flush + commit) before closing the consumer,
+        // otherwise the shutdown commit runs against an already-closed consumer.
         await base.StopAsync(cancellationToken);
+        _consumer?.Close();
     }
 }

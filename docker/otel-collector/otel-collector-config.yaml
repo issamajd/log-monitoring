@@ -10,34 +10,6 @@ receivers:
       http:
         endpoint: 0.0.0.0:4318
 
-  # Scrape Prometheus metrics from Telegraf
-  prometheus:
-    config:
-      scrape_configs:
-        - job_name: 'telegraf'
-          scrape_interval: 10s
-          static_configs:
-            - targets: ['telegraf:9273']
-          metric_relabel_configs:
-            - source_labels: [__name__]
-              regex: 'go_.*'
-              action: drop
-
-  # Health check endpoint
-  hostmetrics:
-    collection_interval: 30s
-    scrapers:
-      cpu:
-        metrics:
-          system.cpu.utilization:
-            enabled: true
-      memory:
-        metrics:
-          system.memory.utilization:
-            enabled: true
-      disk:
-      network:
-
 processors:
   # Batch telemetry for efficiency
   batch:
@@ -130,13 +102,6 @@ exporters:
     sampling_initial: 5
     sampling_thereafter: 200
 
-  # Detailed application telemetry for local development and troubleshooting.
-  # Keep metrics on the basic exporter above to avoid flooding the console.
-  debug/application:
-    verbosity: detailed
-    sampling_initial: 100
-    sampling_thereafter: 1
-
   # Prometheus exporter for self-monitoring
   prometheus:
     endpoint: 0.0.0.0:8889
@@ -162,7 +127,7 @@ service:
   pipelines:
     # Metrics pipeline
     metrics:
-      receivers: [otlp, prometheus, hostmetrics]
+      receivers: [otlp]
       processors: [memory_limiter, batch, resource, attributes/metrics]
       exporters: [kafka/metrics, debug]
 
@@ -170,13 +135,13 @@ service:
     logs:
       receivers: [otlp]
       processors: [memory_limiter, filter/logs, batch, resource, attributes/logs]
-      exporters: [kafka/logs, debug/application]
+      exporters: [kafka/logs, debug]
 
     # Traces pipeline
     traces:
       receivers: [otlp]
       processors: [memory_limiter, batch, resource, attributes/traces]
-      exporters: [kafka/traces, debug/application]
+      exporters: [kafka/traces, debug]
 
   telemetry:
     logs:

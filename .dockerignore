@@ -1,0 +1,8 @@
+**/bin/
+**/obj/
+.git/
+.worktrees/
+node_modules/
+site/
+tests/
+**/*.md

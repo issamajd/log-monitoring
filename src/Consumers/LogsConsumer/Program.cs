@@ -1,4 +1,5 @@
 using LogMonitoring.Consumers.Logs;
+using LogMonitoring.Consumers.Logs.Models;
 using LogMonitoring.Consumers.Logs.Services;
 
 var builder = Host.CreateApplicationBuilder(args);

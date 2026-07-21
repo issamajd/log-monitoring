@@ -53,6 +53,14 @@ public class ElasticsearchLogsRepository : ILogsRepository, IDisposable
 
         var response = await _client.BulkAsync(bulkRequest, cancellationToken);
 
+        if (!response.IsValidResponse)
+        {
+            // Transport-level failure (ES down, timeout, 5xx): throw so the worker
+            // retries and does not commit Kafka offsets for this batch.
+            throw new InvalidOperationException(
+                $"Elasticsearch bulk request failed: {response.ApiCallDetails?.OriginalException?.Message ?? response.ApiCallDetails?.ToString() ?? "unknown error"}");
+        }
+
         if (response.Errors)
         {
             var failedCount = response.ItemsWithErrors.Count();

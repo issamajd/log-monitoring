@@ -7,6 +7,7 @@ WORKDIR /src
 
 # Copy project file and restore
 COPY ["src/Consumers/LogsConsumer/LogsConsumer.csproj", "src/Consumers/LogsConsumer/"]
+COPY ["src/OtlpProto/OtlpProto.csproj", "src/OtlpProto/"]
 RUN dotnet restore "src/Consumers/LogsConsumer/LogsConsumer.csproj"
 
 # Copy source and build
@@ -22,8 +23,5 @@ FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
 
-# Add healthcheck
-HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
-    CMD pgrep -f dotnet || exit 1
 
 ENTRYPOINT ["dotnet", "LogsConsumer.dll"]

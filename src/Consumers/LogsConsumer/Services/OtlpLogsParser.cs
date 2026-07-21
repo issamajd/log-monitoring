@@ -2,6 +2,7 @@ using Google.Protobuf;
 using OpenTelemetry.Proto.Collector.Logs.V1;
 using OpenTelemetry.Proto.Logs.V1;
 using LogMonitoring.Consumers.Logs.Models;
+using LogRecord = LogMonitoring.Consumers.Logs.Models.LogRecord;
 
 namespace LogMonitoring.Consumers.Logs.Services;
 

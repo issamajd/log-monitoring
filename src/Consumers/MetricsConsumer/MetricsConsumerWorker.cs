@@ -13,7 +13,7 @@ public class MetricsConsumerWorker : BackgroundService
     private readonly ILogger<MetricsConsumerWorker> _logger;
     private readonly KafkaConfig _kafkaConfig;
     private readonly IMetricsRepository _metricsRepository;
-    private readonly IMetrcisParser _metricsParser;
+    private readonly IMetricsParser _metricsParser;
     private IConsumer<Ignore, byte[]>? _consumer;
     
     private const int BatchSize = 1000;
@@ -117,10 +117,12 @@ public class MetricsConsumerWorker : BackgroundService
                 {
                     if (batch.Count > 0)
                     {
-                        await FlushBatchAsync(batch, stoppingToken);
-                        _consumer.Commit();
-                        batch.Clear();
-                        lastFlush = DateTime.UtcNow;
+                        if (await FlushBatchAsync(batch, stoppingToken))
+                        {
+                            _consumer.Commit();
+                            batch.Clear();
+                            lastFlush = DateTime.UtcNow;
+                        }
                     }
                 }
             }
@@ -134,35 +136,52 @@ public class MetricsConsumerWorker : BackgroundService
         // Final flush
         if (batch.Count > 0)
         {
-            await FlushBatchAsync(batch, CancellationToken.None);
-            _consumer?.Commit();
+            if (await FlushBatchAsync(batch, CancellationToken.None))
+            {
+                _consumer?.Commit();
+            }
         }
     }
 
-    private async Task FlushBatchAsync(List<MetricDataPoint> batch, CancellationToken cancellationToken)
+    private async Task<bool> FlushBatchAsync(List<MetricDataPoint> batch, CancellationToken cancellationToken)
     {
-        try
+        for (var attempt = 1; attempt <= 3; attempt++)
         {
-            var sw = System.Diagnostics.Stopwatch.StartNew();
-            await _metricsRepository.InsertBatchAsync(batch, cancellationToken);
-            sw.Stop();
+            try
+            {
+                var sw = System.Diagnostics.Stopwatch.StartNew();
+                await _metricsRepository.InsertBatchAsync(batch, cancellationToken);
+                sw.Stop();
 
-            _logger.LogInformation(
-                "Flushed {Count} metrics to TimescaleDB in {ElapsedMs}ms",
-                batch.Count,
-                sw.ElapsedMilliseconds);
+                _logger.LogInformation(
+                    "Flushed {Count} metrics to TimescaleDB in {ElapsedMs}ms",
+                    batch.Count,
+                    sw.ElapsedMilliseconds);
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                if (attempt == 3)
+                {
+                    _logger.LogError(ex, "Failed to flush {Count} metrics to TimescaleDB", batch.Count);
+                    // TODO: Send to dead letter queue
+                    return false;
+                }
+
+                await Task.Delay(TimeSpan.FromMilliseconds(500 * attempt), cancellationToken);
+            }
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to flush {Count} metrics to TimescaleDB", batch.Count);
-            // TODO: Send to dead letter queue
-        }
+
+        return false;
     }
 
     public override async Task StopAsync(CancellationToken cancellationToken)
     {
         _logger.LogInformation("Metrics Consumer stopping...");
-        _consumer?.Close();
+        // Let ExecuteAsync finish (final flush + commit) before closing the consumer,
+        // otherwise the shutdown commit runs against an already-closed consumer.
         await base.StopAsync(cancellationToken);
+        _consumer?.Close();
     }
 }

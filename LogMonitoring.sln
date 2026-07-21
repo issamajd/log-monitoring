@@ -21,6 +21,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LogMonitoring.SystemTracePa
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SystemTraceParserTests", "tests\UnitTests\SystemTraceParserTests\SystemTraceParserTests.csproj", "{C28E05A9-3872-4D58-8A9A-7B17E4BFCF3F}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OtlpProto", "src\OtlpProto\OtlpProto.csproj", "{6F1BC3D8-7A42-4E5F-A9B0-1C2D3E4F5678}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -47,6 +49,10 @@ Global
 		{C28E05A9-3872-4D58-8A9A-7B17E4BFCF3F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C28E05A9-3872-4D58-8A9A-7B17E4BFCF3F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C28E05A9-3872-4D58-8A9A-7B17E4BFCF3F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6F1BC3D8-7A42-4E5F-A9B0-1C2D3E4F5678}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6F1BC3D8-7A42-4E5F-A9B0-1C2D3E4F5678}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6F1BC3D8-7A42-4E5F-A9B0-1C2D3E4F5678}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6F1BC3D8-7A42-4E5F-A9B0-1C2D3E4F5678}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -59,5 +65,6 @@ Global
 		{144AC4B3-790F-817B-EAEE-7FA0DFABF9D8} = {E5F6A7B8-C9D0-1234-EF01-345678901234}
 		{2203771F-DB22-48EF-9E29-CE3EB7EA5CA9} = {144AC4B3-790F-817B-EAEE-7FA0DFABF9D8}
 		{C28E05A9-3872-4D58-8A9A-7B17E4BFCF3F} = {144AC4B3-790F-817B-EAEE-7FA0DFABF9D8}
+		{6F1BC3D8-7A42-4E5F-A9B0-1C2D3E4F5678} = {E5F6A7B8-C9D0-1234-EF01-345678901234}
 	EndGlobalSection
 EndGlobal
