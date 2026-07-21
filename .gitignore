@@ -72,6 +72,9 @@ volumes/
 # Logs
 *.log
 logs/
+# vendored OTLP protos live under .../logs/ directories - keep them tracked
+!src/OtlpProto/protos/opentelemetry/proto/logs/
+!src/OtlpProto/protos/opentelemetry/proto/collector/logs/
 
 # Temp files
 *.tmp
