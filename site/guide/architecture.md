@@ -80,11 +80,11 @@ This split keeps telemetry lean (the correlation key travels with every event; h
 
 | Component | What we have now | What needs to be done |
 |---|---|---|
-| OpenTelemetry in the app | Instrumentation helper library exists; **`rndfwcore` is not instrumented** | Add OTel to `rndfwcore` chokepoints (API, jobs, BP, DQ, SQL, errors) with session/user attributes — this is the first workstream; nothing flows until it lands |
-| .NET / process metrics | Runtime + process instrumentation available in the helper library | Enable alongside app instrumentation; **do not** enable Telegraf CLR counters |
-| Host metrics | Telegraf config exists but runs in a container with `win_perf_counters` commented out | Run Telegraf **on the Windows host**; enable `win_perf_counters` + `win_services`; **remove the collector `hostmetrics` receiver** |
-| Collector → Kafka routing | Collector already publishes to per-signal Kafka topics | Validate topic/partition/retention settings against the deployment profiles |
-| Kafka consumers | Logs and metrics consumers exist from the prototype | Adapt to the final schemas; add traces handling so spans reach Elasticsearch |
+| OpenTelemetry in the app | **`rndfwcore` chokepoints are instrumented** on its `log-monitoring` branch (API, jobs, BP, DQ, SQL spans + metrics, OTLP log bridge, session/user attributes) | Merge the branch; verify OTel exporter DLLs reach deployed host bin folders; instrument the standalone `service/` hosts if in scope |
+| .NET / process metrics | `AddRuntimeInstrumentation()` + `AddProcessInstrumentation()` enabled in the `server.service` host bootstrap | Nothing — keep Telegraf CLR counters removed |
+| Host metrics | Collector `hostmetrics` receiver removed; containerized Telegraf removed; native Windows config at `deploy/telegraf-windows/` | Install Telegraf as a Windows service on each host; fill in the real FWCORE service names in `win_services` |
+| Collector → Kafka routing | Collector publishes to per-signal Kafka topics; settings validated for single-broker Milestone 1 | Consider raising `telemetry-traces` partitions to 12 before span volume grows |
+| Kafka consumers | Logs, metrics **and traces** consumers build and run; OTLP protos vendored via `src/OtlpProto`; offsets commit only after successful storage flush | Route per-document Elasticsearch rejections to the `dlq` topic |
 | On-demand enrichment | Not built | Optional read-only SQL Server lookup keyed on `SessionID`, resolved at investigation time |
 | Storage / search | Elasticsearch + TimescaleDB stand up via Docker Compose | Finalize index mappings, retention/ILM, and metric schemas |
 | Dashboards & alerts | Not built | Build the support-first Grafana dashboards and the basic alert rules |

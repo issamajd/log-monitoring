@@ -25,6 +25,7 @@ npm install && npm run docs:dev   # http://localhost:5173
 
 ## Known gaps in the current code
 
-- Host metrics are collected twice (Telegraf *and* the collector's `hostmetrics` receiver), and both run in Linux containers, so neither sees the real Windows host. Telegraf needs to run natively on the host with `win_perf_counters` + `win_services`.
-- There is no traces consumer — spans have a Kafka topic but no path into Elasticsearch.
+- Telegraf must still be **installed on each Windows host** (config + install steps in `deploy/telegraf-windows/`); the collector `hostmetrics` receiver and the containerized Telegraf are already removed.
+- `rndfwcore` instrumentation lives on its `log-monitoring` branch and is not merged to `dev` yet; deployment must ensure the OpenTelemetry NuGet DLLs land next to the host executables (`Private=False` HintPath references do not copy them).
+- Per-document Elasticsearch bulk rejections are logged but not routed to the `dlq` Kafka topic.
 - No Grafana dashboards, alert rules, or enrichment lookup have been built yet.
