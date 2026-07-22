@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>LogMonitoring.Tests.OtlpJsonParser</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Consumers\LogsConsumer\LogsConsumer.csproj" />
+    <ProjectReference Include="..\..\..\src\Consumers\MetricsConsumer\MetricsConsumer.csproj" />
+    <ProjectReference Include="..\..\..\src\Consumers\TracesConsumer\TracesConsumer.csproj" />
+  </ItemGroup>
+
+</Project>

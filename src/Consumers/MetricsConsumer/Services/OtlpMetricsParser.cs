@@ -1,4 +1,5 @@
 using Google.Protobuf;
+using LogMonitoring.OtlpProto;
 using OpenTelemetry.Proto.Collector.Metrics.V1;
 using OpenTelemetry.Proto.Metrics.V1;
 using LogMonitoring.Consumers.Metrics.Models;
@@ -11,13 +12,13 @@ namespace LogMonitoring.Consumers.Metrics.Services;
 public interface IMetricsParser
 {
     /// <summary>
-    /// Parses metrics from raw bytes (OTLP proto format).
+    /// Parses metrics from an OTLP JSON payload or a legacy Protobuf payload.
     /// </summary>
     List<MetricDataPoint> Parse(byte[] data);
 }
 
 /// <summary>
-/// Parses OTLP proto-encoded metrics into MetricDataPoint objects.
+/// Parses OTLP JSON-encoded metrics into MetricDataPoint objects.
 /// </summary>
 public class OtlpMetricsParser : IMetricsParser
 {
@@ -34,7 +35,7 @@ public class OtlpMetricsParser : IMetricsParser
 
         try
         {
-            var request = ExportMetricsServiceRequest.Parser.ParseFrom(data);
+            var request = OtlpPayloadParser.ParseJsonOrProtobuf(ExportMetricsServiceRequest.Parser, data);
 
             foreach (var resourceMetrics in request.ResourceMetrics)
             {
@@ -53,7 +54,7 @@ public class OtlpMetricsParser : IMetricsParser
         }
         catch (InvalidProtocolBufferException ex)
         {
-            _logger.LogWarning(ex, "Failed to parse OTLP metrics proto");
+            _logger.LogWarning(ex, "Failed to parse OTLP metrics payload");
         }
 
         return result;

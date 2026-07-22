@@ -1,4 +1,5 @@
 using Google.Protobuf;
+using LogMonitoring.OtlpProto;
 using OpenTelemetry.Proto.Collector.Logs.V1;
 using OpenTelemetry.Proto.Logs.V1;
 using LogMonitoring.Consumers.Logs.Models;
@@ -12,13 +13,13 @@ namespace LogMonitoring.Consumers.Logs.Services;
 public interface ILogsParser
 {
     /// <summary>
-    /// Parses logs from raw bytes (OTLP proto format).
+    /// Parses logs from an OTLP JSON payload or a legacy Protobuf payload.
     /// </summary>
     List<LogRecord> Parse(byte[] data);
 }
 
 /// <summary>
-/// Parses OTLP proto-encoded logs into LogRecord objects.
+/// Parses OTLP JSON-encoded logs into LogRecord objects.
 /// </summary>
 public class OtlpLogsParser : ILogsParser
 {
@@ -35,7 +36,7 @@ public class OtlpLogsParser : ILogsParser
 
         try
         {
-            var request = ExportLogsServiceRequest.Parser.ParseFrom(data);
+            var request = OtlpPayloadParser.ParseJsonOrProtobuf(ExportLogsServiceRequest.Parser, data);
 
             foreach (var resourceLogs in request.ResourceLogs)
             {
@@ -60,7 +61,7 @@ public class OtlpLogsParser : ILogsParser
         }
         catch (InvalidProtocolBufferException ex)
         {
-            _logger.LogWarning(ex, "Failed to parse OTLP logs proto");
+            _logger.LogWarning(ex, "Failed to parse OTLP logs payload");
         }
 
         return result;

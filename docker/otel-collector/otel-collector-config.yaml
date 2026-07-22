@@ -68,7 +68,7 @@ exporters:
     brokers:
       - kafka:9092
     topic: telemetry-metrics
-    encoding: otlp_proto
+    encoding: otlp_json
     producer:
       max_message_bytes: 1000000
       required_acks: 1
@@ -79,7 +79,7 @@ exporters:
     brokers:
       - kafka:9092
     topic: telemetry-logs
-    encoding: otlp_proto
+    encoding: otlp_json
     producer:
       max_message_bytes: 1000000
       required_acks: 1
@@ -90,7 +90,7 @@ exporters:
     brokers:
       - kafka:9092
     topic: telemetry-traces
-    encoding: otlp_proto
+    encoding: otlp_json
     producer:
       max_message_bytes: 1000000
       required_acks: 1

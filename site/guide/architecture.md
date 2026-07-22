@@ -25,7 +25,7 @@ The application keeps writing `SystemTrace_*.log` files as a **local backup**, b
 
 Elasticsearch holds searchable events and traces, TimescaleDB holds metrics and time-series summaries, and Grafana serves dashboards and alerts on top of both.
 
-**Kafka is part of Milestone 1.** The collector publishes each signal to its own topic (`telemetry-logs`, `telemetry-metrics`, `telemetry-traces`); dedicated consumers subscribe and write to the stores. The buffer decouples ingestion from storage: Elasticsearch or TimescaleDB can restart or fall behind without losing telemetry, and events can be replayed. Milestone 1 runs a **single-broker** Kafka; advanced reliability — consumer scaling, dead-letter handling, replay tooling, backpressure views — matures in Milestone 2.
+**Kafka is part of Milestone 1.** The collector publishes each signal as human-readable OTLP JSON to its own topic (`telemetry-logs`, `telemetry-metrics`, `telemetry-traces`); dedicated consumers subscribe and write to the stores. Consumers also accept the legacy OTLP Protobuf payloads until records written before the JSON migration expire. The buffer decouples ingestion from storage: Elasticsearch or TimescaleDB can restart or fall behind without losing telemetry, and events can be replayed. Milestone 1 runs a **single-broker** Kafka; advanced reliability — consumer scaling, dead-letter handling, replay tooling, backpressure views — matures in Milestone 2.
 
 ## One source per concern — no double collection
 
