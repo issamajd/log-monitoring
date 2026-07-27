@@ -22,39 +22,30 @@ public interface ITracesParser
 /// </summary>
 public class OtlpTracesParser : ITracesParser
 {
-    private readonly ILogger<OtlpTracesParser> _logger;
-
     public OtlpTracesParser(ILogger<OtlpTracesParser> logger)
     {
-        _logger = logger;
+        ArgumentNullException.ThrowIfNull(logger);
     }
 
     public List<SpanRecord> Parse(byte[] data)
     {
-        var result = new List<SpanRecord>();
+        List<SpanRecord> result = new List<SpanRecord>();
+        ExportTraceServiceRequest request =
+            OtlpPayloadParser.ParseJsonOrProtobuf(ExportTraceServiceRequest.Parser, data);
 
-        try
+        foreach (OpenTelemetry.Proto.Trace.V1.ResourceSpans resourceSpans in request.ResourceSpans)
         {
-            var request = OtlpPayloadParser.ParseJsonOrProtobuf(ExportTraceServiceRequest.Parser, data);
+            // Extract resource attributes
+            ResourceAttributes resourceAttrs = ExtractResourceAttributes(resourceSpans);
 
-            foreach (var resourceSpans in request.ResourceSpans)
+            foreach (ScopeSpans scopeSpans in resourceSpans.ScopeSpans)
             {
-                // Extract resource attributes
-                var resourceAttrs = ExtractResourceAttributes(resourceSpans);
-
-                foreach (var scopeSpans in resourceSpans.ScopeSpans)
+                foreach (Span span in scopeSpans.Spans)
                 {
-                    foreach (var span in scopeSpans.Spans)
-                    {
-                        var record = ConvertSpanRecord(span, resourceAttrs);
-                        result.Add(record);
-                    }
+                    SpanRecord record = ConvertSpanRecord(span, resourceAttrs);
+                    result.Add(record);
                 }
             }
-        }
-        catch (InvalidProtocolBufferException ex)
-        {
-            _logger.LogWarning(ex, "Failed to parse OTLP traces payload");
         }
 
         return result;

@@ -16,6 +16,7 @@ builder.Services.Configure<ElasticsearchConfig>(builder.Configuration.GetSection
 // Register services
 builder.Services.AddSingleton<ITracesRepository, ElasticsearchTracesRepository>();
 builder.Services.AddSingleton<ITracesParser, OtlpTracesParser>();
+builder.Services.AddSingleton<KafkaDlqProducer>();
 
 // Register the worker
 builder.Services.AddHostedService<TracesConsumerWorker>();

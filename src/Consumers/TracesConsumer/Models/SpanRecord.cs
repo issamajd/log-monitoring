@@ -286,6 +286,11 @@ public class KafkaConfig
     public string BootstrapServers { get; set; } = "localhost:9092";
     public string ConsumerGroupId { get; set; } = "traces-consumer-group";
     public string TracesTopic { get; set; } = "telemetry-traces";
+
+    /// <summary>
+    /// Gets or sets the dead-letter topic. Null or empty disables DLQ publishing.
+    /// </summary>
+    public string? DlqTopic { get; set; } = "dlq";
 }
 
 /// <summary>

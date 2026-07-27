@@ -12,5 +12,8 @@ public interface ITracesRepository
     /// </summary>
     /// <param name="spans">The spans to index.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    Task IndexBatchAsync(IReadOnlyList<SpanRecord> spans, CancellationToken cancellationToken = default);
+    /// <returns>The per-document rejections returned by Elasticsearch.</returns>
+    Task<IReadOnlyList<SpanIndexRejection>> IndexBatchAsync(
+        IReadOnlyList<SpanRecord> spans,
+        CancellationToken cancellationToken = default);
 }

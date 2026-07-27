@@ -12,6 +12,9 @@ namespace LogMonitoring.Consumers.Logs.Services;
 /// </summary>
 public class ElasticsearchLogsRepository : ILogsRepository, IDisposable
 {
+    private const int MaxBulkAttempts = 5;
+    private const int BaseRetryDelayMs = 500;
+
     private readonly ILogger<ElasticsearchLogsRepository> _logger;
     private readonly ElasticsearchClient _client;
     private readonly string _indexAlias;
@@ -35,45 +38,98 @@ public class ElasticsearchLogsRepository : ILogsRepository, IDisposable
         _client = new ElasticsearchClient(settings);
     }
 
-    public async Task IndexBatchAsync(IReadOnlyList<LogRecord> logs, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<LogIndexRejection>> IndexBatchAsync(
+        IReadOnlyList<LogRecord> logs,
+        CancellationToken cancellationToken = default)
     {
         if (logs.Count == 0)
-            return;
+            return Array.Empty<LogIndexRejection>();
 
-        var bulkRequest = new BulkRequest(_indexAlias)
-        {
-            Operations = new List<IBulkOperation>()
-        };
+        List<LogIndexRejection> rejections = new();
+        List<LogRecord> pendingLogs = new(logs);
+        int exhaustedRetryCount = 0;
+        long totalTookMs = 0;
 
-        foreach (var log in logs)
+        for (int attempt = 1; attempt <= MaxBulkAttempts; attempt++)
         {
-            var indexOp = new BulkIndexOperation<LogRecord>(log);
-            bulkRequest.Operations.Add(indexOp);
+            BulkRequest bulkRequest = new BulkRequest(_indexAlias)
+            {
+                Operations = new List<IBulkOperation>()
+            };
+
+            foreach (LogRecord log in pendingLogs)
+            {
+                BulkIndexOperation<LogRecord> indexOperation = new BulkIndexOperation<LogRecord>(log);
+                bulkRequest.Operations.Add(indexOperation);
+            }
+
+            BulkResponse response = await _client.BulkAsync(bulkRequest, cancellationToken);
+
+            if (!response.IsValidResponse)
+            {
+                // Transport-level failure (ES down, timeout, 5xx): throw so the worker
+                // retries and does not commit Kafka offsets for this batch.
+                throw new InvalidOperationException(
+                    $"Elasticsearch bulk request failed: {response.ApiCallDetails?.OriginalException?.Message ?? response.ApiCallDetails?.ToString() ?? "unknown error"}");
+            }
+
+            totalTookMs += response.Took;
+            List<LogRecord> retriableLogs = new();
+
+            for (int index = 0; index < response.Items.Count; index++)
+            {
+                ResponseItem item = response.Items[index];
+                if (item.IsValid)
+                    continue;
+
+                LogRecord log = pendingLogs[index];
+                bool isRetriable = item.Status is 429 or 503;
+                if (isRetriable && attempt < MaxBulkAttempts)
+                {
+                    // This list preserves the response-position-to-document mapping
+                    // after each retry request is narrowed to a smaller subset.
+                    retriableLogs.Add(log);
+                    continue;
+                }
+
+                rejections.Add(new LogIndexRejection(
+                    log,
+                    item.Error?.Type ?? "unknown",
+                    item.Error?.Reason ?? "Unknown error",
+                    item.Status));
+
+                if (isRetriable)
+                    exhaustedRetryCount++;
+            }
+
+            if (retriableLogs.Count == 0)
+                break;
+
+            TimeSpan retryDelay = TimeSpan.FromMilliseconds(
+                BaseRetryDelayMs * (1 << (attempt - 1)));
+            await Task.Delay(retryDelay, cancellationToken);
+            pendingLogs = retriableLogs;
         }
 
-        var response = await _client.BulkAsync(bulkRequest, cancellationToken);
-
-        if (!response.IsValidResponse)
+        if (exhaustedRetryCount > 0)
         {
-            // Transport-level failure (ES down, timeout, 5xx): throw so the worker
-            // retries and does not commit Kafka offsets for this batch.
-            throw new InvalidOperationException(
-                $"Elasticsearch bulk request failed: {response.ApiCallDetails?.OriginalException?.Message ?? response.ApiCallDetails?.ToString() ?? "unknown error"}");
+            _logger.LogWarning(
+                "Elasticsearch bulk retries were exhausted for {FailedCount} documents",
+                exhaustedRetryCount);
         }
 
-        if (response.Errors)
+        if (rejections.Count > 0)
         {
-            var failedCount = response.ItemsWithErrors.Count();
             _logger.LogWarning(
                 "Bulk index completed with {FailedCount} errors out of {TotalCount} documents",
-                failedCount,
+                rejections.Count,
                 logs.Count);
 
-            foreach (var item in response.ItemsWithErrors.Take(5))
+            foreach (LogIndexRejection rejection in rejections.Take(5))
             {
                 _logger.LogWarning(
                     "Failed to index document: {Error}",
-                    item.Error?.Reason ?? "Unknown error");
+                    rejection.ErrorReason);
             }
         }
         else
@@ -81,8 +137,10 @@ public class ElasticsearchLogsRepository : ILogsRepository, IDisposable
             _logger.LogDebug(
                 "Successfully indexed {Count} documents in {TookMs}ms",
                 logs.Count,
-                response.Took);
+                totalTookMs);
         }
+
+        return rejections;
     }
 
     public void Dispose()

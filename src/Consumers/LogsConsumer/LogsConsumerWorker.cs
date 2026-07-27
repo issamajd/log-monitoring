@@ -14,6 +14,7 @@ public class LogsConsumerWorker : BackgroundService
     private readonly KafkaConfig _kafkaConfig;
     private readonly ILogsRepository _logsRepository;
     private readonly ILogsParser _logsParser;
+    private readonly KafkaDlqProducer _dlqProducer;
     private IConsumer<Ignore, byte[]>? _consumer;
     
     private const int BatchSize = 500;
@@ -23,12 +24,14 @@ public class LogsConsumerWorker : BackgroundService
         ILogger<LogsConsumerWorker> logger,
         IOptions<KafkaConfig> kafkaConfig,
         ILogsRepository logsRepository,
-        ILogsParser logsParser)
+        ILogsParser logsParser,
+        KafkaDlqProducer dlqProducer)
     {
         _logger = logger;
         _kafkaConfig = kafkaConfig.Value;
         _logsRepository = logsRepository;
         _logsParser = logsParser;
+        _dlqProducer = dlqProducer;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -108,6 +111,19 @@ public class LogsConsumerWorker : BackgroundService
                     catch (Exception ex)
                     {
                         _logger.LogWarning(ex, "Failed to parse logs message, skipping...");
+
+                        try
+                        {
+                            _dlqProducer.PublishParseFailure(
+                                consumeResult.Message.Value,
+                                ex.Message);
+                        }
+                        catch (Exception dlqException)
+                        {
+                            _logger.LogError(
+                                dlqException,
+                                "Failed to publish logs parse failure to the DLQ");
+                        }
                     }
                 }
 
@@ -150,13 +166,32 @@ public class LogsConsumerWorker : BackgroundService
             try
             {
                 var sw = System.Diagnostics.Stopwatch.StartNew();
-                await _logsRepository.IndexBatchAsync(batch, cancellationToken);
+                IReadOnlyList<LogIndexRejection> rejections =
+                    await _logsRepository.IndexBatchAsync(batch, cancellationToken);
                 sw.Stop();
 
                 _logger.LogInformation(
                     "Indexed {Count} logs to Elasticsearch in {ElapsedMs}ms",
                     batch.Count,
                     sw.ElapsedMilliseconds);
+
+                foreach (LogIndexRejection rejection in rejections)
+                {
+                    try
+                    {
+                        _dlqProducer.PublishRejectedDocument(
+                            rejection.Document,
+                            rejection.ErrorType,
+                            rejection.ErrorReason,
+                            rejection.StatusCode);
+                    }
+                    catch (Exception dlqException)
+                    {
+                        _logger.LogError(
+                            dlqException,
+                            "Failed to publish rejected log document to the DLQ");
+                    }
+                }
 
                 return true;
             }
@@ -165,7 +200,6 @@ public class LogsConsumerWorker : BackgroundService
                 if (attempt == 3)
                 {
                     _logger.LogError(ex, "Failed to index {Count} logs to Elasticsearch", batch.Count);
-                    // TODO: Send to dead letter queue
                     return false;
                 }
 

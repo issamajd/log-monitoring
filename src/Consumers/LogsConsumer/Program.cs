@@ -16,6 +16,7 @@ builder.Services.Configure<ElasticsearchConfig>(builder.Configuration.GetSection
 // Register services
 builder.Services.AddSingleton<ILogsRepository, ElasticsearchLogsRepository>();
 builder.Services.AddSingleton<ILogsParser, OtlpLogsParser>();
+builder.Services.AddSingleton<KafkaDlqProducer>();
 
 // Register the worker
 builder.Services.AddHostedService<LogsConsumerWorker>();
