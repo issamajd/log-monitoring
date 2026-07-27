@@ -1,0 +1,30 @@
+# Read-only session-context lookup against the monitored application's
+# SQL Server database. Provisioned ONLY when SESSION_ENRICHMENT=enabled
+# (see docker-compose.yml -- this file is bind-mounted over
+# /etc/grafana/provisioning/datasources/session-enrichment.yaml).
+#
+# NOTE ON SYNTAX: datasource provisioning uses plain $VAR / ${VAR} env
+# interpolation. This is NOT the $__env{VAR} form used in
+# provisioning/alerting/contact-points.yaml -- do not copy that pattern here.
+apiVersion: 1
+
+datasources:
+  - name: App-Sessions
+    uid: mssql-sessions
+    type: mssql
+    access: proxy               # Grafana backend queries; the browser never sees the DB
+    url: $SESSION_ENRICHMENT_MSSQL_URL          # e.g. sqlhost.customer.local:1433
+    database: $SESSION_ENRICHMENT_MSSQL_DB
+    user: $SESSION_ENRICHMENT_MSSQL_USER
+    secureJsonData:
+      password: $SESSION_ENRICHMENT_MSSQL_PASSWORD
+    jsonData:
+      encrypt: "true"
+      tlsSkipVerify: true       # on-prem instances typically use a self-signed cert;
+                                # set false where the customer has a trusted cert
+      connectionTimeout: 5
+      maxOpenConns: 2           # hard cap on our footprint in the customer's DB
+      maxIdleConns: 1
+      connMaxLifetime: 300
+    isDefault: false            # must not disturb TimescaleDB's isDefault: true
+    editable: false             # no accidental UI edits to the connection

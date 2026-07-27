@@ -1,0 +1,80 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "description": "Session enrichment status for this deployment.",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [
+    {
+      "title": "Back to Triage",
+      "type": "link",
+      "icon": "external link",
+      "url": "/d/triage-error-search/triage-error-search?var-session_id=${session_id}",
+      "targetBlank": false,
+      "tags": []
+    }
+  ],
+  "liveNow": false,
+  "panels": [
+    {
+      "gridPos": {
+        "h": 14,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "mode": "markdown",
+        "content": "**Session enrichment is disabled for this deployment.**\n\nThis installation is not configured with a read-only connection to the application database, so session details (user, machine, role, login time) cannot be resolved here.\n\nTelemetry-side context — `session_id`, `user`, `operation`, `service`, `host` — is still attached to every log and span by the application itself and is available on **Triage & Error Search** and **SQL Insight**.\n\nTo enable: see `deploy/session-enrichment/README.md`."
+      },
+      "title": "Session enrichment",
+      "type": "text"
+    }
+  ],
+  "refresh": "",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": [
+    "log-monitoring",
+    "support",
+    "enrichment"
+  ],
+  "templating": {
+    "list": [
+      {
+        "name": "session_id",
+        "label": "Session ID",
+        "type": "textbox",
+        "query": "",
+        "current": {
+          "selected": false,
+          "text": "",
+          "value": ""
+        },
+        "options": [
+          {
+            "text": "",
+            "value": "",
+            "selected": true
+          }
+        ],
+        "hide": 0,
+        "skipUrlSync": false
+      }
+    ]
+  },
+  "time": {
+    "from": "now-24h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Session Lookup (App DB)",
+  "uid": "session-lookup",
+  "version": 1,
+  "weekStart": ""
+}

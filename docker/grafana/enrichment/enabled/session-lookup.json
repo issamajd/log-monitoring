@@ -1,0 +1,186 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "On-demand, read-only session context from the monitored application's database.",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [
+    {
+      "title": "Back to Triage",
+      "type": "link",
+      "icon": "external link",
+      "url": "/d/triage-error-search/triage-error-search?var-session_id=${session_id}",
+      "targetBlank": false,
+      "tags": []
+    }
+  ],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": {
+        "type": "mssql",
+        "uid": "mssql-sessions"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "noValue": "No session row found.\n\nEither the SessionID is not in this deployment's CLIENTSESSIONLOG, or the session predates the application's retention window, or DB enrichment points at a different customer database.\n\nTelemetry-side context (user, operation, host) is still on the triage dashboards.",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Field"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 200
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 14,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false,
+          "reducer": [
+            "sum"
+          ],
+          "countRows": false,
+          "fields": ""
+        },
+        "pagination": {
+          "enabled": false
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "mssql",
+            "uid": "mssql-sessions"
+          },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "EXEC dbo.usp_MonSessionContext @SessionId = ${session_id:sqlstring};",
+          "refId": "A"
+        }
+      ],
+      "title": "Session context — $session_id",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Ord": true
+            },
+            "indexByName": {},
+            "renameByName": {}
+          }
+        }
+      ],
+      "type": "table"
+    },
+    {
+      "gridPos": {
+        "h": 14,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "id": 2,
+      "options": {
+        "mode": "markdown",
+        "content": "This is an **on-demand, read-only** lookup against the monitored application's database, run only when you open this page for a specific session. Nothing here is stored in Elasticsearch or TimescaleDB.\n\nThe fields shown are a fixed allowlist defined in `dbo.usp_MonSessionContext` in the application database. The monitoring account can execute that procedure and nothing else — it cannot read any other table.\n\nIf a field you need is missing, that is a data-policy decision, not a bug: raise it with the customer's data owner."
+      },
+      "title": "About this lookup",
+      "type": "text"
+    }
+  ],
+  "refresh": "",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": [
+    "log-monitoring",
+    "support",
+    "enrichment"
+  ],
+  "templating": {
+    "list": [
+      {
+        "name": "session_id",
+        "label": "Session ID",
+        "type": "textbox",
+        "query": "",
+        "current": {
+          "selected": false,
+          "text": "",
+          "value": ""
+        },
+        "options": [
+          {
+            "text": "",
+            "value": "",
+            "selected": true
+          }
+        ],
+        "hide": 0,
+        "skipUrlSync": false
+      }
+    ]
+  },
+  "time": {
+    "from": "now-24h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Session Lookup (App DB)",
+  "uid": "session-lookup",
+  "version": 1,
+  "weekStart": ""
+}

@@ -20,7 +20,18 @@
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
   "id": null,
-  "links": [],
+  "links": [
+    {
+      "title": "Session context (app DB)",
+      "tooltip": "Read-only lookup of the current Session ID in the application database",
+      "type": "link",
+      "icon": "external link",
+      "url": "/d/session-lookup/session-lookup?var-session_id=${session_id}",
+      "targetBlank": true,
+      "asDropdown": false,
+      "tags": []
+    }
+  ],
   "liveNow": false,
   "panels": [
     {
@@ -541,6 +552,29 @@
                     "title": "All statements in txn",
                     "url": "/d/sql-insight/sql-insight?var-sql_transaction_id=${__value.raw}&${__url_time_range}",
                     "targetBlank": false
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "session_id"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Filter by session",
+                    "url": "/d/sql-insight/sql-insight?var-session_id=${__value.raw}&${__url_time_range}",
+                    "targetBlank": false
+                  },
+                  {
+                    "title": "Session context (app DB)",
+                    "url": "/d/session-lookup/session-lookup?var-session_id=${__value.raw}",
+                    "targetBlank": true
                   }
                 ]
               }

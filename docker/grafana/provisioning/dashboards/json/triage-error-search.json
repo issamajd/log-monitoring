@@ -20,7 +20,18 @@
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
   "id": null,
-  "links": [],
+  "links": [
+    {
+      "title": "Session context (app DB)",
+      "tooltip": "Read-only lookup of the current Session ID in the application database",
+      "type": "link",
+      "icon": "external link",
+      "url": "/d/session-lookup/session-lookup?var-session_id=${session_id}",
+      "targetBlank": true,
+      "asDropdown": false,
+      "tags": []
+    }
+  ],
   "liveNow": false,
   "panels": [
     {
@@ -739,6 +750,11 @@
                     "title": "Filter by session",
                     "url": "/d/triage-error-search/triage-error-search?var-session_id=${__value.raw}&${__url_time_range}",
                     "targetBlank": false
+                  },
+                  {
+                    "title": "Session context (app DB)",
+                    "url": "/d/session-lookup/session-lookup?var-session_id=${__value.raw}",
+                    "targetBlank": true
                   }
                 ]
               }

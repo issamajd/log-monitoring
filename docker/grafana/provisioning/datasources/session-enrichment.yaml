@@ -1,0 +1,12 @@
+# SESSION_ENRICHMENT is disabled for this deployment.
+# This does not merely skip provisioning -- it actively removes the datasource
+# from an existing grafana-data volume, so flipping the switch back to
+# "disabled" genuinely revokes access rather than leaving an orphan.
+# (Same deleteDatasources discipline as provisioning/datasources/datasources.yaml.)
+apiVersion: 1
+
+deleteDatasources:
+  - name: App-Sessions
+    orgId: 1
+
+datasources: []
