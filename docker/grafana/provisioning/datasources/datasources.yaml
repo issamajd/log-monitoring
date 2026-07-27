@@ -1,9 +1,17 @@
 # Grafana data sources provisioning
 apiVersion: 1
 
+# The pre-UID-pinning provisioning created a datasource named "Elasticsearch";
+# renaming it to Elasticsearch-Logs would otherwise leave the old one orphaned
+# in existing grafana-data volumes.
+deleteDatasources:
+  - name: Elasticsearch
+    orgId: 1
+
 datasources:
   # TimescaleDB (PostgreSQL) for metrics
   - name: TimescaleDB
+    uid: timescaledb
     type: postgres
     access: proxy
     url: timescaledb:5432
@@ -20,8 +28,9 @@ datasources:
       timescaledb: true
     isDefault: true
 
-  # Elasticsearch for logs
-  - name: Elasticsearch
+  # Elasticsearch for logs (logs-* alias)
+  - name: Elasticsearch-Logs
+    uid: es-logs
     type: elasticsearch
     access: proxy
     url: http://elasticsearch:9200
@@ -34,11 +43,27 @@ datasources:
       maxConcurrentShardRequests: 5
       includeFrozen: false
 
-  # Prometheus (OTel Collector self-metrics)
+  # Elasticsearch for traces (traces-* alias)
+  - name: Elasticsearch-Traces
+    uid: es-traces
+    type: elasticsearch
+    access: proxy
+    url: http://elasticsearch:9200
+    database: "traces-*"
+    jsonData:
+      esVersion: "8.0.0"
+      timeField: "@timestamp"
+      maxConcurrentShardRequests: 5
+      includeFrozen: false
+
+  # Prometheus server scraping the OTel Collector's self-metrics.
+  # Must point at the Prometheus query API — the collector's own 8888/8889
+  # ports only expose /metrics, not /api/v1/query.
   - name: Prometheus
+    uid: prometheus-collector
     type: prometheus
     access: proxy
-    url: http://otel-collector:8889
+    url: http://prometheus:9090
     jsonData:
       httpMethod: POST
       manageAlerts: true

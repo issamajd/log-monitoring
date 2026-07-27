@@ -1,0 +1,48 @@
+# Grafana 10.2 unified alerting provisioning: contact points + notification policies.
+# Combined into a single file per implementation instructions (spec Part B normally
+# splits these into contactpoints.yaml + policies.yaml — merged here intentionally).
+apiVersion: 1
+
+contactPoints:
+  - orgId: 1
+    name: support-email
+    receivers:
+      - uid: support-email-recv
+        type: email
+        settings:
+          # $__env{...} is Grafana's provisioning-time env var substitution syntax
+          # (no shell-style ":-default" fallback). The variables are passed into the
+          # container by docker-compose.yml with placeholder defaults — set
+          # ALERT_EMAIL_TO / ALERT_WEBHOOK_URL per deployment.
+          addresses: $__env{ALERT_EMAIL_TO}
+          singleEmail: false
+        disableResolveMessage: false
+
+  - orgId: 1
+    name: support-webhook
+    receivers:
+      - uid: support-webhook-recv
+        type: webhook
+        settings:
+          url: $__env{ALERT_WEBHOOK_URL}
+          httpMethod: POST
+        disableResolveMessage: false
+
+policies:
+  - orgId: 1
+    receiver: support-email
+    group_by: ['alertname', 'grafana_folder']
+    group_wait: 30s
+    group_interval: 5m
+    repeat_interval: 4h
+    routes:
+      - receiver: support-email
+        object_matchers:
+          - [severity, '=', critical]
+        group_wait: 10s
+        repeat_interval: 1h
+        continue: true
+      - receiver: support-webhook
+        object_matchers:
+          - [severity, '=', critical]
+        continue: false

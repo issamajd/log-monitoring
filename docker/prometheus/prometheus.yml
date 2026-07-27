@@ -1,0 +1,11 @@
+# Prometheus scraping the OTel Collector's self-telemetry.
+# The collector serves its own otelcol_* metrics on 8888
+# (service.telemetry.metrics.address), not on the 8889 prometheusexporter port.
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: otel-collector
+    static_configs:
+      - targets: ["otel-collector:8888"]
