@@ -15,6 +15,7 @@ volumes:
   elasticsearch-data:
   grafana-data:
   otel-checkpoint:
+  prometheus-data:
 
 services:
   # ============================================================================
@@ -73,9 +74,13 @@ services:
 
         kafka-topics --create --if-not-exists --bootstrap-server kafka:9092 --topic telemetry-metrics --partitions 12 --replication-factor 1 --config retention.ms=604800000 --config compression.type=snappy
         kafka-topics --create --if-not-exists --bootstrap-server kafka:9092 --topic telemetry-logs --partitions 12 --replication-factor 1 --config retention.ms=604800000 --config compression.type=snappy
-        kafka-topics --create --if-not-exists --bootstrap-server kafka:9092 --topic telemetry-traces --partitions 6 --replication-factor 1 --config retention.ms=259200000 --config compression.type=snappy
+        kafka-topics --create --if-not-exists --bootstrap-server kafka:9092 --topic telemetry-traces --partitions 12 --replication-factor 1 --config retention.ms=259200000 --config compression.type=snappy
         kafka-topics --create --if-not-exists --bootstrap-server kafka:9092 --topic alerts --partitions 3 --replication-factor 1
         kafka-topics --create --if-not-exists --bootstrap-server kafka:9092 --topic dlq --partitions 3 --replication-factor 1 --config retention.ms=1209600000
+
+        # Existing deployments created telemetry-traces with 6 partitions; --create --if-not-exists
+        # is a no-op there, so align the partition count on upgrade (errors if already 12, hence || true).
+        kafka-topics --alter --bootstrap-server kafka:9092 --topic telemetry-traces --partitions 12 || true
 
         echo 'Topics created:'
         kafka-topics --list --bootstrap-server kafka:9092
@@ -219,8 +224,10 @@ services:
             }
           }'
 
-        # Create initial index
-        curl --fail -sS -X PUT 'http://elasticsearch:9200/logs-000001' \
+        # Create initial index. No --fail: on an existing data volume this returns
+        # 400 resource_already_exists, which must not abort the rest of the script
+        # (set -e + --fail previously skipped every later step on re-runs).
+        curl -sS -X PUT 'http://elasticsearch:9200/logs-000001' \
           -H 'Content-Type: application/json' \
           -d '{ "aliases": { "logs": { "is_write_index": true } } }'
 
@@ -282,7 +289,7 @@ services:
                   "duration_ms": { "type": "double" },
                   "db_rows_affected": { "type": "double" },
                   "error": { "type": "boolean" },
-                  "name": { "type": "text" },
+                  "name": { "type": "text", "fields": { "keyword": { "type": "keyword", "ignore_above": 1024 } } },
                   "db_statement": { "type": "text" },
                   "status_message": { "type": "text" },
                   "@timestamp": { "type": "date" },
@@ -296,10 +303,18 @@ services:
             }
           }'
 
-        # Create initial traces index
-        curl --fail -sS -X PUT 'http://elasticsearch:9200/traces-000001' \
+        # Create initial traces index (no --fail: tolerate resource_already_exists on re-runs)
+        curl -sS -X PUT 'http://elasticsearch:9200/traces-000001' \
           -H 'Content-Type: application/json' \
           -d '{ "aliases": { "traces": { "is_write_index": true } } }'
+
+        # Index templates only apply when an index is created; add the name.keyword
+        # sub-field to traces indices that already exist (additive, idempotent).
+        # Documents indexed before this gained the sub-field stay invisible to
+        # name.keyword aggregations until reindexed or rolled over.
+        curl --fail -sS -X PUT 'http://elasticsearch:9200/traces-*/_mapping' \
+          -H 'Content-Type: application/json' \
+          -d '{ "properties": { "name": { "type": "text", "fields": { "keyword": { "type": "keyword", "ignore_above": 1024 } } } } }'
 
         echo 'Elasticsearch initialization complete!'
 
@@ -321,9 +336,8 @@ services:
       - "4317:4317"   # OTLP gRPC
       - "4318:4318"   # OTLP HTTP
       - "8888:8888"   # Prometheus metrics (self)
-      - "8889:8889"   # Prometheus exporter
       - "13133:13133" # Health check
-      - "55679:55679" # zPages
+      - "56679:55679" # zPages (host port moved off the Windows NAT reserved range 55634-55933)
     volumes:
       - ./docker/otel-collector/otel-collector-config.yaml:/etc/otelcol-contrib/config.yaml:ro
       - otel-checkpoint:/var/lib/otelcol
@@ -339,6 +353,27 @@ services:
       retries: 5
     restart: unless-stopped
     command: ["--config=/etc/otelcol-contrib/config.yaml"]
+
+  # Prometheus scrapes the collector's self-telemetry (otel-collector:8888) so
+  # Grafana's collector-health panels and the collector-export-failures alert
+  # have a real query API — the collector itself only exposes /metrics.
+  prometheus:
+    image: prom/prometheus:v2.48.1
+    container_name: prometheus
+    hostname: prometheus
+    depends_on:
+      - otel-collector
+    volumes:
+      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.retention.time=7d"
+    ports:
+      - "9090:9090"
+    networks:
+      - monitoring-net
+    restart: unless-stopped
 
   # ============================================================================
   # CONSUMERS
@@ -379,6 +414,7 @@ services:
       - Kafka__BootstrapServers=kafka:9092
       - Kafka__ConsumerGroupId=logs-consumer-group
       - Kafka__LogsTopic=telemetry-logs
+      - Kafka__DlqTopic=dlq
       - Elasticsearch__Url=http://elasticsearch:9200
       - Elasticsearch__IndexAlias=logs
     networks:
@@ -400,6 +436,7 @@ services:
       - Kafka__BootstrapServers=kafka:9092
       - Kafka__ConsumerGroupId=traces-consumer-group
       - Kafka__TracesTopic=telemetry-traces
+      - Kafka__DlqTopic=dlq
       - Elasticsearch__Url=http://elasticsearch:9200
       - Elasticsearch__IndexAlias=traces
     networks:
@@ -427,9 +464,33 @@ services:
       - GF_USERS_ALLOW_SIGN_UP=false
       - GF_SERVER_ROOT_URL=http://localhost:3000
       - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource
+      # Consumed via $__env{} in provisioning/alerting/contact-points.yaml.
+      # Set real values per deployment; the defaults are non-routable placeholders.
+      - ALERT_EMAIL_TO=${ALERT_EMAIL_TO:-support-alerts@example.invalid}
+      - ALERT_WEBHOOK_URL=${ALERT_WEBHOOK_URL:-http://localhost:9/alert-webhook-not-configured}
+      # --- Session enrichment (optional, off by default) ---------------------
+      # Read-only lookup of SessionID against the monitored app's SQL Server.
+      # Provisioned only when SESSION_ENRICHMENT=enabled (see volumes below).
+      # Set these in .env -- never commit real credentials. See
+      # deploy/session-enrichment/README.md.
+      - SESSION_ENRICHMENT_MSSQL_URL=${SESSION_ENRICHMENT_MSSQL_URL:-}
+      - SESSION_ENRICHMENT_MSSQL_DB=${SESSION_ENRICHMENT_MSSQL_DB:-}
+      - SESSION_ENRICHMENT_MSSQL_USER=${SESSION_ENRICHMENT_MSSQL_USER:-}
+      - SESSION_ENRICHMENT_MSSQL_PASSWORD=${SESSION_ENRICHMENT_MSSQL_PASSWORD:-}
+      # Grafana encrypts secureJsonData with this key. The built-in default is a
+      # well-known constant -- set a real value wherever a DB password is stored.
+      - GF_SECURITY_SECRET_KEY=${GF_SECURITY_SECRET_KEY:-SW2YcwTIb9zpOOhoPsMm}
     volumes:
       - grafana-data:/var/lib/grafana
       - ./docker/grafana/provisioning:/etc/grafana/provisioning:ro
+      # SESSION_ENRICHMENT selects the "enabled" or "disabled" variant of both
+      # files. Default is disabled: no datasource, no credentials, no DB reach.
+      # These land inside the provisioning mount above; the target paths exist
+      # as committed placeholder files (disabled-variant copies), because a file
+      # bind-mount inside the read-only provisioning mount cannot create its own
+      # mountpoint -- it can only cover an existing file.
+      - ./docker/grafana/enrichment/${SESSION_ENRICHMENT:-disabled}/datasource.yaml:/etc/grafana/provisioning/datasources/session-enrichment.yaml:ro
+      - ./docker/grafana/enrichment/${SESSION_ENRICHMENT:-disabled}/session-lookup.json:/etc/grafana/provisioning/dashboards/json/session-lookup.json:ro
     networks:
       - monitoring-net
     healthcheck:

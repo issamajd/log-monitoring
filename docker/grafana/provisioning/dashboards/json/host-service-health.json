@@ -1,0 +1,1571 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "panels": [],
+      "title": "Host vitals",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "timescaledb"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "line+area"
+            }
+          },
+          "mappings": [],
+          "unit": "percent",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 70
+              },
+              {
+                "color": "red",
+                "value": 90
+              }
+            ]
+          },
+          "max": 100
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 1
+      },
+      "id": 2,
+      "options": {
+        "legend": {
+          "calcs": [
+            "last",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "timescaledb"
+          },
+          "refId": "A",
+          "format": "time_series",
+          "rawSql": "SELECT time AS \"time\", host_name AS metric, value\nFROM metrics.raw_metrics\nWHERE metric_name = 'win_cpu_Percent_Processor_Time'\n  AND labels->>'instance' = '_Total'\n  AND time BETWEEN $__timeFrom() AND $__timeTo()\n  AND ($host='All' OR host_name = '$host')\nORDER BY time;",
+          "editorMode": "code",
+          "rawQuery": true,
+          "sql": {
+            "columns": [],
+            "groupBy": [],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "CPU % (Total) by host",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "timescaledb"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "line+area"
+            }
+          },
+          "mappings": [],
+          "unit": "decbytes",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 536870912
+              },
+              {
+                "color": "green",
+                "value": 1073741824
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 1
+      },
+      "id": 3,
+      "options": {
+        "legend": {
+          "calcs": [
+            "last",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "timescaledb"
+          },
+          "refId": "A",
+          "format": "time_series",
+          "rawSql": "SELECT time AS \"time\", host_name AS metric, value\nFROM metrics.raw_metrics\nWHERE metric_name = 'win_mem_Available_Bytes'\n  AND time BETWEEN $__timeFrom() AND $__timeTo()\n  AND ($host='All' OR host_name = '$host')\nORDER BY time;",
+          "editorMode": "code",
+          "rawQuery": true,
+          "sql": {
+            "columns": [],
+            "groupBy": [],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Memory Available (bytes)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "timescaledb"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "unit": "decbytes",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 9
+      },
+      "id": 4,
+      "options": {
+        "legend": {
+          "calcs": [
+            "last",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "timescaledb"
+          },
+          "refId": "A",
+          "format": "time_series",
+          "rawSql": "SELECT time AS \"time\", host_name AS metric, value\nFROM metrics.raw_metrics\nWHERE metric_name = 'win_mem_Committed_Bytes'\n  AND time BETWEEN $__timeFrom() AND $__timeTo()\n  AND ($host='All' OR host_name = '$host')\nORDER BY time;",
+          "editorMode": "code",
+          "rawQuery": true,
+          "sql": {
+            "columns": [],
+            "groupBy": [],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Committed Bytes",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "timescaledb"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "line+area"
+            }
+          },
+          "mappings": [],
+          "unit": "percent",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 80
+              },
+              {
+                "color": "red",
+                "value": 90
+              }
+            ]
+          },
+          "max": 100
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 9
+      },
+      "id": 5,
+      "options": {
+        "legend": {
+          "calcs": [
+            "last",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "timescaledb"
+          },
+          "refId": "A",
+          "format": "time_series",
+          "rawSql": "SELECT time AS \"time\", host_name || ' ' || COALESCE(labels->>'instance', labels->>'path','?') AS metric, value\nFROM metrics.raw_metrics\nWHERE metric_name = 'disk_used_percent'\n  AND time BETWEEN $__timeFrom() AND $__timeTo()\n  AND ($host='All' OR host_name = '$host')\n  AND ($disk_instance='All' OR labels->>'instance' = '$disk_instance')\nORDER BY time;",
+          "editorMode": "code",
+          "rawQuery": true,
+          "sql": {
+            "columns": [],
+            "groupBy": [],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Disk used % by volume",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "timescaledb"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "unit": "Bps",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 17
+      },
+      "id": 6,
+      "options": {
+        "legend": {
+          "calcs": [
+            "last",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "timescaledb"
+          },
+          "refId": "A",
+          "format": "time_series",
+          "rawSql": "SELECT time AS \"time\", host_name||' '||labels->>'instance'||' read' AS metric, value\nFROM metrics.raw_metrics WHERE metric_name='win_diskio_Disk_Read_Bytes_persec'\n  AND time BETWEEN $__timeFrom() AND $__timeTo() AND ($host='All' OR host_name='$host') ORDER BY time;",
+          "editorMode": "code",
+          "rawQuery": true,
+          "sql": {
+            "columns": [],
+            "groupBy": [],
+            "limit": 50
+          }
+        },
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "timescaledb"
+          },
+          "refId": "B",
+          "format": "time_series",
+          "rawSql": "SELECT time AS \"time\", host_name||' '||labels->>'instance'||' write' AS metric, value\nFROM metrics.raw_metrics WHERE metric_name='win_diskio_Disk_Write_Bytes_persec'\n  AND time BETWEEN $__timeFrom() AND $__timeTo() AND ($host='All' OR host_name='$host') ORDER BY time;",
+          "editorMode": "code",
+          "rawQuery": true,
+          "sql": {
+            "columns": [],
+            "groupBy": [],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Disk I/O (read+write bytes/s)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "timescaledb"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "unit": "Bps",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 17
+      },
+      "id": 7,
+      "options": {
+        "legend": {
+          "calcs": [
+            "last",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "timescaledb"
+          },
+          "refId": "A",
+          "format": "time_series",
+          "rawSql": "SELECT time AS \"time\", host_name||' '||labels->>'instance'||' rx' AS metric, value\nFROM metrics.raw_metrics WHERE metric_name='win_net_Bytes_Received_persec'\n  AND time BETWEEN $__timeFrom() AND $__timeTo() AND ($host='All' OR host_name='$host') ORDER BY time;",
+          "editorMode": "code",
+          "rawQuery": true,
+          "sql": {
+            "columns": [],
+            "groupBy": [],
+            "limit": 50
+          }
+        },
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "timescaledb"
+          },
+          "refId": "B",
+          "format": "time_series",
+          "rawSql": "SELECT time AS \"time\", host_name||' '||labels->>'instance'||' tx' AS metric, value\nFROM metrics.raw_metrics WHERE metric_name='win_net_Bytes_Sent_persec'\n  AND time BETWEEN $__timeFrom() AND $__timeTo() AND ($host='All' OR host_name='$host') ORDER BY time;",
+          "editorMode": "code",
+          "rawQuery": true,
+          "sql": {
+            "columns": [],
+            "groupBy": [],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Network throughput",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 25
+      },
+      "id": 8,
+      "panels": [],
+      "title": "Service & host status",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "timescaledb"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "1": {
+                  "color": "red",
+                  "text": "Stopped",
+                  "index": 0
+                },
+                "2": {
+                  "color": "yellow",
+                  "text": "Start Pending",
+                  "index": 1
+                },
+                "3": {
+                  "color": "yellow",
+                  "text": "Stop Pending",
+                  "index": 2
+                },
+                "4": {
+                  "color": "green",
+                  "text": "Running",
+                  "index": 3
+                },
+                "5": {
+                  "color": "blue",
+                  "text": "Continue Pending",
+                  "index": 4
+                },
+                "6": {
+                  "color": "blue",
+                  "text": "Pause Pending",
+                  "index": 5
+                },
+                "7": {
+                  "color": "orange",
+                  "text": "Paused",
+                  "index": 6
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 4
+              }
+            ]
+          },
+          "unit": "short",
+          "noValue": "no service metric (placeholder unfilled)"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 0,
+        "y": 26
+      },
+      "id": 9,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "timescaledb"
+          },
+          "refId": "A",
+          "format": "table",
+          "rawSql": "SELECT labels->>'service_name' AS \"service\", host_name, value\nFROM metrics.latest_metrics\nWHERE metric_name = 'win_services_state'\n  AND ($host='All' OR host_name = '$host');",
+          "editorMode": "code",
+          "rawQuery": true,
+          "sql": {
+            "columns": [],
+            "groupBy": [],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "rndfwcore service state",
+      "type": "stat",
+      "description": "Metric win_services_state (telegraf win_services plugin default measurement + state field); requires telegraf REPLACE_WITH_RNDFWCORE_SERVICE_NAME placeholder filled. NoData => placeholder unfilled."
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "timescaledb"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 8,
+        "y": 26
+      },
+      "id": 10,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "timescaledb"
+          },
+          "refId": "A",
+          "format": "table",
+          "rawSql": "SELECT COUNT(DISTINCT host_name) AS value FROM metrics.raw_metrics WHERE time >= NOW() - INTERVAL '5 minutes';",
+          "editorMode": "code",
+          "rawQuery": true,
+          "sql": {
+            "columns": [],
+            "groupBy": [],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Active hosts (last 5m)",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "timescaledb"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 70
+              },
+              {
+                "color": "red",
+                "value": 90
+              }
+            ]
+          },
+          "unit": "percent",
+          "max": 100
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 16,
+        "y": 26
+      },
+      "id": 11,
+      "options": {
+        "displayMode": "gradient",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": true
+        },
+        "showUnfilled": true,
+        "valueMode": "color"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "timescaledb"
+          },
+          "refId": "A",
+          "format": "table",
+          "rawSql": "SELECT host_name, value FROM metrics.latest_metrics\nWHERE metric_name='win_cpu_Percent_Processor_Time' AND labels->>'instance'='_Total';",
+          "editorMode": "code",
+          "rawQuery": true,
+          "sql": {
+            "columns": [],
+            "groupBy": [],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Host CPU now",
+      "type": "bargauge"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 32
+      },
+      "id": 12,
+      "panels": [],
+      "title": ".NET runtime pressure (per service)",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "timescaledb"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "unit": "decbytes",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 33
+      },
+      "id": 13,
+      "options": {
+        "legend": {
+          "calcs": [
+            "last",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "timescaledb"
+          },
+          "refId": "A",
+          "format": "time_series",
+          "rawSql": "SELECT time AS \"time\", service_name||' '||labels->>'generation' AS metric, value\nFROM metrics.raw_metrics\nWHERE metric_name = 'process.runtime.dotnet.gc.heap.size'\n  AND time BETWEEN $__timeFrom() AND $__timeTo()\n  AND ($svc='All' OR service_name='$svc')\nORDER BY time;",
+          "editorMode": "code",
+          "rawQuery": true,
+          "sql": {
+            "columns": [],
+            "groupBy": [],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "GC heap size by generation",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "timescaledb"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "line+area"
+            }
+          },
+          "mappings": [],
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 100
+              },
+              {
+                "color": "red",
+                "value": 1000
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 33
+      },
+      "id": 14,
+      "options": {
+        "legend": {
+          "calcs": [
+            "last",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "timescaledb"
+          },
+          "refId": "A",
+          "format": "time_series",
+          "rawSql": "SELECT time AS \"time\", service_name AS metric, value\nFROM metrics.raw_metrics\nWHERE metric_name = 'process.runtime.dotnet.thread_pool.queue.length'\n  AND time BETWEEN $__timeFrom() AND $__timeTo()\n  AND ($svc='All' OR service_name='$svc')\nORDER BY time;",
+          "editorMode": "code",
+          "rawQuery": true,
+          "sql": {
+            "columns": [],
+            "groupBy": [],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Thread pool queue length",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "timescaledb"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 41
+      },
+      "id": 15,
+      "options": {
+        "legend": {
+          "calcs": [
+            "last",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "timescaledb"
+          },
+          "refId": "A",
+          "format": "time_series",
+          "rawSql": "SELECT time AS \"time\", service_name AS metric, value\nFROM metrics.raw_metrics\nWHERE metric_name = 'process.runtime.dotnet.monitor.lock_contention.count'\n  AND time BETWEEN $__timeFrom() AND $__timeTo()\n  AND ($svc='All' OR service_name='$svc')\nORDER BY time;",
+          "editorMode": "code",
+          "rawQuery": true,
+          "sql": {
+            "columns": [],
+            "groupBy": [],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Lock contention (count)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "timescaledb"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 41
+      },
+      "id": 16,
+      "options": {
+        "legend": {
+          "calcs": [
+            "last",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "timescaledb"
+          },
+          "refId": "A",
+          "format": "time_series",
+          "rawSql": "SELECT time AS \"time\", service_name AS metric, value\nFROM metrics.raw_metrics\nWHERE metric_name = 'process.runtime.dotnet.exceptions.count'\n  AND time BETWEEN $__timeFrom() AND $__timeTo()\n  AND ($svc='All' OR service_name='$svc')\nORDER BY time;",
+          "editorMode": "code",
+          "rawQuery": true,
+          "sql": {
+            "columns": [],
+            "groupBy": [],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Exceptions thrown",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "timescaledb"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "unit": "decbytes",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 49
+      },
+      "id": 17,
+      "options": {
+        "legend": {
+          "calcs": [
+            "last",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "timescaledb"
+          },
+          "refId": "A",
+          "format": "time_series",
+          "rawSql": "SELECT time AS \"time\", service_name AS metric, value\nFROM metrics.raw_metrics\nWHERE metric_name = 'process.memory.usage'\n  AND time BETWEEN $__timeFrom() AND $__timeTo()\n  AND ($svc='All' OR service_name='$svc')\nORDER BY time;",
+          "editorMode": "code",
+          "rawQuery": true,
+          "sql": {
+            "columns": [],
+            "groupBy": [],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Process working set",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": [
+    "host",
+    "windows",
+    "infra",
+    "log-monitoring"
+  ],
+  "templating": {
+    "list": [
+      {
+        "name": "datasource",
+        "label": "Data Source",
+        "type": "datasource",
+        "query": "postgres",
+        "current": {
+          "selected": true,
+          "text": "TimescaleDB",
+          "value": "timescaledb"
+        },
+        "refresh": 1,
+        "regex": "",
+        "multi": false,
+        "includeAll": false,
+        "options": [],
+        "hide": 0,
+        "skipUrlSync": false
+      },
+      {
+        "name": "host",
+        "label": "Host",
+        "type": "query",
+        "datasource": {
+          "type": "postgres",
+          "uid": "timescaledb"
+        },
+        "definition": "SELECT DISTINCT host_name FROM metrics.raw_metrics\nWHERE time >= NOW() - INTERVAL '1 hour' AND host_name IS NOT NULL\nORDER BY host_name;",
+        "query": "SELECT DISTINCT host_name FROM metrics.raw_metrics\nWHERE time >= NOW() - INTERVAL '1 hour' AND host_name IS NOT NULL\nORDER BY host_name;",
+        "refresh": 2,
+        "regex": "",
+        "sort": 1,
+        "multi": false,
+        "includeAll": true,
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        },
+        "options": [],
+        "hide": 0,
+        "skipUrlSync": false,
+        "allValue": "All"
+      },
+      {
+        "name": "disk_instance",
+        "label": "Disk Instance",
+        "type": "query",
+        "datasource": {
+          "type": "postgres",
+          "uid": "timescaledb"
+        },
+        "definition": "SELECT DISTINCT labels->>'instance' AS instance FROM metrics.raw_metrics\nWHERE metric_name='disk_used_percent' AND time >= NOW()-INTERVAL '1 hour' ORDER BY 1;",
+        "query": "SELECT DISTINCT labels->>'instance' AS instance FROM metrics.raw_metrics\nWHERE metric_name='disk_used_percent' AND time >= NOW()-INTERVAL '1 hour' ORDER BY 1;",
+        "refresh": 2,
+        "regex": "",
+        "sort": 1,
+        "multi": false,
+        "includeAll": true,
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        },
+        "options": [],
+        "hide": 0,
+        "skipUrlSync": false,
+        "allValue": "All"
+      },
+      {
+        "name": "svc",
+        "label": "Service",
+        "type": "query",
+        "datasource": {
+          "type": "postgres",
+          "uid": "timescaledb"
+        },
+        "definition": "SELECT DISTINCT service_name FROM metrics.raw_metrics\nWHERE service_name IS NOT NULL AND time>=NOW()-INTERVAL '1 hour' ORDER BY 1;",
+        "query": "SELECT DISTINCT service_name FROM metrics.raw_metrics\nWHERE service_name IS NOT NULL AND time>=NOW()-INTERVAL '1 hour' ORDER BY 1;",
+        "refresh": 2,
+        "regex": "",
+        "sort": 1,
+        "multi": false,
+        "includeAll": true,
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        },
+        "options": [],
+        "hide": 0,
+        "skipUrlSync": false,
+        "allValue": "All"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-3h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Host & Windows Service Health",
+  "uid": "host-service-health",
+  "version": 1,
+  "weekStart": ""
+}

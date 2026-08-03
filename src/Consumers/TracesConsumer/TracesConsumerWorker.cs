@@ -14,6 +14,7 @@ public class TracesConsumerWorker : BackgroundService
     private readonly KafkaConfig _kafkaConfig;
     private readonly ITracesRepository _tracesRepository;
     private readonly ITracesParser _tracesParser;
+    private readonly KafkaDlqProducer _dlqProducer;
     private IConsumer<Ignore, byte[]>? _consumer;
     
     private const int BatchSize = 500;
@@ -23,12 +24,14 @@ public class TracesConsumerWorker : BackgroundService
         ILogger<TracesConsumerWorker> logger,
         IOptions<KafkaConfig> kafkaConfig,
         ITracesRepository tracesRepository,
-        ITracesParser tracesParser)
+        ITracesParser tracesParser,
+        KafkaDlqProducer dlqProducer)
     {
         _logger = logger;
         _kafkaConfig = kafkaConfig.Value;
         _tracesRepository = tracesRepository;
         _tracesParser = tracesParser;
+        _dlqProducer = dlqProducer;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -108,6 +111,19 @@ public class TracesConsumerWorker : BackgroundService
                     catch (Exception ex)
                     {
                         _logger.LogWarning(ex, "Failed to parse traces message, skipping...");
+
+                        try
+                        {
+                            _dlqProducer.PublishParseFailure(
+                                consumeResult.Message.Value,
+                                ex.Message);
+                        }
+                        catch (Exception dlqException)
+                        {
+                            _logger.LogError(
+                                dlqException,
+                                "Failed to publish traces parse failure to the DLQ");
+                        }
                     }
                 }
 
@@ -150,13 +166,32 @@ public class TracesConsumerWorker : BackgroundService
             try
             {
                 var sw = System.Diagnostics.Stopwatch.StartNew();
-                await _tracesRepository.IndexBatchAsync(batch, cancellationToken);
+                IReadOnlyList<SpanIndexRejection> rejections =
+                    await _tracesRepository.IndexBatchAsync(batch, cancellationToken);
                 sw.Stop();
 
                 _logger.LogInformation(
                     "Indexed {Count} spans to Elasticsearch in {ElapsedMs}ms",
                     batch.Count,
                     sw.ElapsedMilliseconds);
+
+                foreach (SpanIndexRejection rejection in rejections)
+                {
+                    try
+                    {
+                        _dlqProducer.PublishRejectedDocument(
+                            rejection.Document,
+                            rejection.ErrorType,
+                            rejection.ErrorReason,
+                            rejection.StatusCode);
+                    }
+                    catch (Exception dlqException)
+                    {
+                        _logger.LogError(
+                            dlqException,
+                            "Failed to publish rejected span document to the DLQ");
+                    }
+                }
 
                 return true;
             }
@@ -165,7 +200,6 @@ public class TracesConsumerWorker : BackgroundService
                 if (attempt == 3)
                 {
                     _logger.LogError(ex, "Failed to index {Count} spans to Elasticsearch", batch.Count);
-                    // TODO: Send to dead letter queue
                     return false;
                 }
 

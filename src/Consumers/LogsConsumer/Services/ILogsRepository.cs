@@ -12,5 +12,8 @@ public interface ILogsRepository
     /// </summary>
     /// <param name="logs">The logs to index.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    Task IndexBatchAsync(IReadOnlyList<LogRecord> logs, CancellationToken cancellationToken = default);
+    /// <returns>The per-document rejections returned by Elasticsearch.</returns>
+    Task<IReadOnlyList<LogIndexRejection>> IndexBatchAsync(
+        IReadOnlyList<LogRecord> logs,
+        CancellationToken cancellationToken = default);
 }

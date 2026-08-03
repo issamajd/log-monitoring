@@ -81,11 +81,11 @@
 <div class="wrap">
 
 <header class="hero">
-  <div class="eyebrow">Project Review · 2026-07-20</div>
+  <div class="eyebrow">Project Review · 2026-07-23 (updated)</div>
   <h1>Log Monitoring</h1>
   <p class="sub">Support-first observability for on-prem Windows deployments. This page maps the project, its target, and its plan into a single picture — then rates how coherent and buildable it is.</p>
   <div class="kpi">
-    <div class="card"><b>8</b><p>Overall / 10</p></div>
+    <div class="card"><b>8.5</b><p>Overall / 10</p></div>
     <div class="card"><b>M1</b><p>Active milestone</p></div>
     <div class="card"><b>OTel</b><p>Single telemetry source</p></div>
     <div class="card"><b>Local</b><p>Data residency default</p></div>
@@ -126,18 +126,24 @@ flowchart TB
   OTELSDK -->|OTLP gRPC| COLL
   TELE["Telegraf on the Windows host<br/>(CPU · RAM · disk · net · service state)"] --> COLL
 
-  KAFKA(["Kafka — durable buffer, single broker<br/>telemetry-logs · telemetry-metrics · telemetry-traces"])
+  KAFKA(["Kafka — durable buffer, single broker<br/>telemetry-logs · telemetry-metrics · telemetry-traces (12 partitions) · dlq"])
   COLL --> KAFKA
 
-  LC["Logs/Traces consumer"]
+  LC["Logs consumer"]
+  TC["Traces consumer"]
   MC["Metrics consumer"]
   KAFKA --> LC
+  KAFKA --> TC
   KAFKA --> MC
 
   ES[("Elasticsearch<br/>searchable events + traces + SQL text")]:::store
   TS[("TimescaleDB<br/>metrics + time-series")]:::store
   LC --> ES
+  TC --> ES
   MC --> TS
+
+  PROM["Prometheus<br/>scrapes collector self-telemetry"]
+  COLL -.-> PROM
 
   ENR["SQL Server — optional on-demand lookup<br/>(SessionID → customer/entity context,<br/>read-only, at investigation time)"]:::opt
 
@@ -145,6 +151,7 @@ flowchart TB
   KIB["Kibana (index/debug)"]:::view
   ES --> GRAF
   TS --> GRAF
+  PROM --> GRAF
   ES --> KIB
   ENR -.-> GRAF
   NOTIF["Notifications<br/>email · Teams/Slack webhook"]:::view
@@ -169,7 +176,7 @@ flowchart TB
 </table>
 
 <div class="callout warn">
-  <strong>Where the code stands.</strong> The Kafka pipeline (<code>OTLP → Kafka → consumers → ES/Timescale</code>) is now <em>in</em> Milestone&nbsp;1, so the existing compose stack and consumers are the base to build on, not a prototype to strip. Remaining divergences: (1) host metrics are collected <strong>twice</strong> today — Telegraf <em>and</em> the collector’s <code>hostmetrics</code> receiver — both inside Linux containers, so neither sees the real Windows host; the plan moves Telegraf onto the host and drops <code>hostmetrics</code>. (2) A traces consumer is missing — spans have a Kafka topic but no path into Elasticsearch. And <strong>nothing flows yet</strong> — <code>rndfwcore</code> is not instrumented, so app instrumentation is workstream #1.
+  <strong>Where the code stands.</strong> The three earlier blockers are resolved. <code>rndfwcore</code> is now instrumented on its <code>log-monitoring</code> branch — API, jobs, BP, DQ, SQL spans and metrics, an OTLP log bridge, session/user attributes — and the full pipeline (<code>app → OTel SDK → collector → Kafka → consumers → ES/Timescale</code>) was verified end-to-end against a real deployment (<code>rnds4assets</code>) on 2026-07-22. There are now <strong>three consumers</strong> — logs and traces into Elasticsearch, metrics into TimescaleDB — so the missing-traces gap is closed. Host-metrics double-collection is gone: the collector <code>hostmetrics</code> receiver and containerized Telegraf are removed, with native Windows Telegraf config under <code>deploy/telegraf-windows/</code>. Honest remaining gaps: the Grafana dashboards and alert rules were authored while the Docker stack was down and still need <strong>reconciling against live data</strong> (unverified metric names are flagged in panel descriptions); Telegraf still has to be <strong>installed as a service on each Windows host</strong> with real FWCORE service names; the instrumentation branch must be <strong>merged to <code>dev</code></strong> and packaged so the OTel DLLs land in deployed bin folders; and the optional SQL Server session-enrichment lookup is <strong>still unbuilt</strong>.
 </div>
 
 <!-- ============ SUPPORT WORKFLOW ============ -->
@@ -190,8 +197,8 @@ flowchart LR
 <h2><span class="n">04</span> Milestone sequence</h2>
 <table>
   <tr><th>Stage</th><th>Name</th><th>Outcome</th></tr>
-  <tr><td><span class="tag t-good">M1 · now</span></td><td>Support Triage Foundation</td><td>OpenTelemetry instrumentation, single-broker Kafka buffer, enrichment, ES + Timescale + Grafana, server health, basic alerts.</td></tr>
-  <tr><td><span class="tag t-accent">M2</span></td><td>Pipeline Reliability</td><td>Consumer scaling, dead-letter, replay tooling, backpressure on the M1 Kafka pipeline.</td></tr>
+  <tr><td><span class="tag t-good">M1 · now</span></td><td>Support Triage Foundation</td><td>OpenTelemetry instrumentation, single-broker Kafka buffer with DLQ core, ES + Timescale + Grafana dashboards + alerts, server health. Enrichment lookup still pending.</td></tr>
+  <tr><td><span class="tag t-accent">M2</span></td><td>Pipeline Reliability</td><td>Consumer scaling, replay tooling, backpressure on the M1 Kafka pipeline (dead-letter core already landed in M1).</td></tr>
   <tr><td><span class="tag t-accent">M3</span></td><td>Log Intelligence</td><td>Richer event processing, dedup, timelines, pattern grouping, stronger risky-SQL detection.</td></tr>
   <tr><td><span class="tag t-accent">M4</span></td><td>Operational Hardening</td><td>Offline bundle, backup/restore, upgrades, RBAC, runbooks.</td></tr>
   <tr><td><span class="tag t-accent">M5</span></td><td>Proactive Alerting</td><td>Trend, absence, rate-of-change, correlation alerts.</td></tr>
@@ -200,7 +207,7 @@ flowchart LR
 
 <!-- ============ ASSESSMENT ============ -->
 <h2><span class="n">05</span> My rating</h2>
-<p class="lead">Scored as a <em>plan + early codebase</em>, not a shipped product. The thinking is unusually mature; the gap is that the code hasn't caught up to the plan yet.</p>
+<p class="lead">Scored as a <em>plan + working codebase</em>, not yet a shipped product. The thinking is unusually mature and the code has now largely caught up to the plan; the remaining gap is live-stack verification and rollout, not core implementation.</p>
 
 <div class="grid g2">
   <div class="panel">
@@ -223,15 +230,15 @@ flowchart LR
   </div>
   <div class="panel">
     <h3>Code ↔ plan alignment</h3>
-    <div class="score"><b>7</b><span>/ 10</span></div>
-    <div class="bar"><i style="width:70%"></i></div>
-    <p class="lead" style="margin-top:10px">With Kafka in M1, the compose stack and consumers now match the target pipeline. Remaining gaps: host metrics double-collected in containers, no traces consumer, and the app emits no OTel yet.</p>
+    <div class="score"><b>9</b><span>/ 10</span></div>
+    <div class="bar"><i style="width:90%"></i></div>
+    <p class="lead" style="margin-top:10px">The code now matches the target pipeline end to end: app instrumented, collector → Kafka → three consumers → ES/Timescale verified against a real deployment. Host-metric double-collection is fixed and DLQ core landed. What's left is rollout, not architecture.</p>
   </div>
   <div class="panel">
     <h3>Implementation maturity</h3>
-    <div class="score"><b>6</b><span>/ 10</span></div>
-    <div class="bar"><i style="width:60%;background:var(--warn)"></i></div>
-    <p class="lead" style="margin-top:10px">Real, working pieces exist: a tested pipe-delimited parser, a full OTel config library (traces/metrics/logs, SQL client, correlation middleware, custom metrics), and two consumers. But no Grafana dashboards, alerts, or enrichment yet.</p>
+    <div class="score"><b>8</b><span>/ 10</span></div>
+    <div class="bar"><i style="width:80%"></i></div>
+    <p class="lead" style="margin-top:10px">The value layer is largely built: three consumers, five provisioned support-first Grafana dashboards, 18 file-provisioned alert rules with pinned datasource UIDs, and a Prometheus service for pipeline-health panels. Held back from higher by the still-down live stack (dashboards need reconciling against real data), placeholder alert destinations, and the unbuilt enrichment lookup.</p>
   </div>
   <div class="panel">
     <h3>Risk &amp; security posture</h3>
@@ -246,23 +253,25 @@ flowchart LR
   <li><strong>Correct altitude.</strong> The plan shrinks the next step while keeping the north star — the roadmap literally says so.</li>
   <li><strong>Concrete success criteria &amp; thresholds</strong> (API &gt;3s warn / &gt;10s crit; SQL &gt;1s / &gt;5s), so “done” is testable.</li>
   <li><strong>Deployment realism.</strong> Same-server vs dedicated profiles, online vs offline install, disk-sizing formula — this is on-prem reality, not slideware.</li>
-  <li><strong>Working OTel helper library</strong> (traces, metrics, logs, correlation middleware) ready to drop into the app; the SystemTrace parser stays parked in the repo as a fallback.</li>
+  <li><strong>Instrumentation is live.</strong> The OTel helper library (traces, metrics, logs, correlation middleware) is wired into <code>rndfwcore</code> and the full pipeline was verified end-to-end against a real deployment; the SystemTrace parser stays parked in the repo as a fallback.</li>
 </ul>
 
 <h3>Risks &amp; gaps</h3>
 <ul class="clean">
-  <li><span class="tag t-bad">top risk</span> &nbsp;<strong>Nothing flows until the app is instrumented.</strong> The pipeline matches the plan, but <code>rndfwcore</code> emits no OpenTelemetry — instrumenting its chokepoints is the critical path for everything else.</li>
-  <li><strong>The whole value layer is unbuilt:</strong> Grafana dashboards, the 7 alert rules, and SQL-Server session enrichment are specified but not implemented.</li>
-  <li><strong>Unvalidated assumptions:</strong> real daily log volume, the exact safe session-lookup query, and final ES index mappings/shards — all flagged as open questions.</li>
+  <li><span class="tag t-bad">top risk</span> &nbsp;<strong>Dashboards and alerts aren't verified against live data.</strong> They were authored and cross-validated against code/config while the Docker stack was down; unverified metric names are flagged in panel descriptions and need reconciling once the stack is back up.</li>
+  <li><strong>Rollout is unfinished:</strong> the instrumentation branch still needs merging to <code>dev</code> and packaging so the OTel DLLs reach deployed bin folders, and Telegraf must be installed as a Windows service on each host with real FWCORE service names.</li>
+  <li><strong>Placeholder alert destinations:</strong> email/webhook contact points default to <code>ALERT_EMAIL_TO</code>/<code>ALERT_WEBHOOK_URL</code> env vars — no alert reaches a human until those are set per site.</li>
+  <li><strong>Enrichment lookup still unbuilt:</strong> the optional read-only SQL Server session → customer/entity lookup is specified but not implemented.</li>
+  <li><strong>Unvalidated assumptions:</strong> real daily log volume and final ES index mappings/shards remain open questions to confirm against production traffic.</li>
   <li><strong>Redaction trust boundary:</strong> if the app doesn’t mask a secret, the pipeline stores it in plaintext by design. Needs a verification step, at least a sampling check.</li>
 </ul>
 
 <div class="callout">
-  <strong>Bottom line — 8 / 10.</strong> A well-reasoned plan whose pipeline the code already largely implements now that Kafka is in Milestone&nbsp;1. The biggest lever is instrumenting <code>rndfwcore</code> — nothing flows until then — followed by the Grafana dashboards, alerts, and enrichment layer that deliver the support-triage value.
+  <strong>Bottom line — 8.5 / 10.</strong> A well-reasoned plan the code now largely implements: the app is instrumented, the pipeline is verified end-to-end, and the support-triage value layer — dashboards, alerts, DLQ — is built. Instrumentation is no longer the blocker. The biggest remaining levers are live-stack verification of the dashboards and alerts against real data, building the enrichment lookup, and finishing rollout — branch merge, packaging, and Telegraf host installs.
 </div>
 
 <div class="foot">
-  Generated from the repository’s VitePress plan (<code>site/guide/*</code>), <code>docker-compose.yml</code>, and <code>src/</code>. Diagrams render with Mermaid. Milestone&nbsp;1 = Support Triage Foundation · active branch <code>master</code>.
+  Generated from the repository’s VitePress plan (<code>site/guide/*</code>), <code>docker-compose.yml</code>, <code>src/</code>, <code>deploy/</code>, and the Grafana provisioning tree, reconciled against the 2026-07-22 end-to-end verification. Diagrams render with Mermaid. Milestone&nbsp;1 = Support Triage Foundation · active branch <code>master</code>.
 </div>
 
 </div>

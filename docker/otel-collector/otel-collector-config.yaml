@@ -102,11 +102,6 @@ exporters:
     sampling_initial: 5
     sampling_thereafter: 200
 
-  # Prometheus exporter for self-monitoring
-  prometheus:
-    endpoint: 0.0.0.0:8889
-    namespace: otelcol
-
 extensions:
   # Health check extension
   health_check:

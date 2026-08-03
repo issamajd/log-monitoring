@@ -23,45 +23,36 @@ public interface ILogsParser
 /// </summary>
 public class OtlpLogsParser : ILogsParser
 {
-    private readonly ILogger<OtlpLogsParser> _logger;
-
     public OtlpLogsParser(ILogger<OtlpLogsParser> logger)
     {
-        _logger = logger;
+        ArgumentNullException.ThrowIfNull(logger);
     }
 
     public List<LogRecord> Parse(byte[] data)
     {
-        var result = new List<LogRecord>();
+        List<LogRecord> result = new List<LogRecord>();
+        ExportLogsServiceRequest request =
+            OtlpPayloadParser.ParseJsonOrProtobuf(ExportLogsServiceRequest.Parser, data);
 
-        try
+        foreach (OpenTelemetry.Proto.Logs.V1.ResourceLogs resourceLogs in request.ResourceLogs)
         {
-            var request = OtlpPayloadParser.ParseJsonOrProtobuf(ExportLogsServiceRequest.Parser, data);
+            // Extract resource attributes
+            ResourceAttributes resourceAttrs = ExtractResourceAttributes(resourceLogs);
 
-            foreach (var resourceLogs in request.ResourceLogs)
+            foreach (ScopeLogs scopeLogs in resourceLogs.ScopeLogs)
             {
-                // Extract resource attributes
-                var resourceAttrs = ExtractResourceAttributes(resourceLogs);
-
-                foreach (var scopeLogs in resourceLogs.ScopeLogs)
+                InstrumentationScope scope = new InstrumentationScope
                 {
-                    var scope = new InstrumentationScope
-                    {
-                        Name = scopeLogs.Scope?.Name,
-                        Version = scopeLogs.Scope?.Version
-                    };
+                    Name = scopeLogs.Scope?.Name,
+                    Version = scopeLogs.Scope?.Version
+                };
 
-                    foreach (var logRecord in scopeLogs.LogRecords)
-                    {
-                        var record = ConvertLogRecord(logRecord, resourceAttrs, scope);
-                        result.Add(record);
-                    }
+                foreach (OpenTelemetry.Proto.Logs.V1.LogRecord logRecord in scopeLogs.LogRecords)
+                {
+                    LogRecord record = ConvertLogRecord(logRecord, resourceAttrs, scope);
+                    result.Add(record);
                 }
             }
-        }
-        catch (InvalidProtocolBufferException ex)
-        {
-            _logger.LogWarning(ex, "Failed to parse OTLP logs payload");
         }
 
         return result;

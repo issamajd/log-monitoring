@@ -15,6 +15,8 @@ The first dashboards should help support triage customer issues quickly. Support
 5. Open the session or operation timeline.
 6. Export/share the relevant filtered events if escalation is needed.
 
+From **Triage & Error Search** or **SQL Insight**, open a `session_id` cell's **Session context (app DB)** link to reach **Session Lookup**. This opt-in lookup is read-only and runs only when opened; its result is not stored in monitoring.
+
 ## Dashboard set
 
 - **Triage Overview** — errors, slow operations, risky SQL, service state, ingestion health.
