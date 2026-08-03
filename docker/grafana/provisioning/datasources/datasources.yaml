@@ -57,8 +57,8 @@ datasources:
       includeFrozen: false
 
   # Prometheus server scraping the OTel Collector's self-metrics.
-  # Must point at the Prometheus query API — the collector's own 8888/8889
-  # ports only expose /metrics, not /api/v1/query.
+  # Must point at the Prometheus query API — the collector's own 8888 port
+  # only exposes /metrics, not /api/v1/query.
   - name: Prometheus
     uid: prometheus-collector
     type: prometheus

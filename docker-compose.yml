@@ -336,7 +336,6 @@ services:
       - "4317:4317"   # OTLP gRPC
       - "4318:4318"   # OTLP HTTP
       - "8888:8888"   # Prometheus metrics (self)
-      - "8889:8889"   # Prometheus exporter
       - "13133:13133" # Health check
       - "56679:55679" # zPages (host port moved off the Windows NAT reserved range 55634-55933)
     volumes:

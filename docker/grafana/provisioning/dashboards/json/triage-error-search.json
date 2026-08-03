@@ -93,7 +93,7 @@
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
-            "lastNotNull"
+            "sum"
           ],
           "fields": "",
           "values": false
@@ -115,7 +115,17 @@
               "type": "count"
             }
           ],
-          "bucketAggs": [],
+          "bucketAggs": [
+            {
+              "id": "2",
+              "type": "date_histogram",
+              "field": "@timestamp",
+              "settings": {
+                "interval": "auto",
+                "min_doc_count": "0"
+              }
+            }
+          ],
           "timeField": "@timestamp"
         }
       ],
@@ -164,7 +174,7 @@
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
-            "lastNotNull"
+            "sum"
           ],
           "fields": "",
           "values": false
@@ -186,7 +196,17 @@
               "type": "count"
             }
           ],
-          "bucketAggs": [],
+          "bucketAggs": [
+            {
+              "id": "2",
+              "type": "date_histogram",
+              "field": "@timestamp",
+              "settings": {
+                "interval": "auto",
+                "min_doc_count": "0"
+              }
+            }
+          ],
           "timeField": "@timestamp"
         }
       ],
@@ -239,7 +259,7 @@
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
-            "lastNotNull"
+            "sum"
           ],
           "fields": "",
           "values": false
@@ -261,7 +281,17 @@
               "type": "count"
             }
           ],
-          "bucketAggs": [],
+          "bucketAggs": [
+            {
+              "id": "2",
+              "type": "date_histogram",
+              "field": "@timestamp",
+              "settings": {
+                "interval": "auto",
+                "min_doc_count": "0"
+              }
+            }
+          ],
           "timeField": "@timestamp"
         }
       ],
@@ -306,7 +336,7 @@
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
-            "lastNotNull"
+            "max"
           ],
           "fields": "",
           "values": false
@@ -329,7 +359,17 @@
               "field": "session_id.keyword"
             }
           ],
-          "bucketAggs": [],
+          "bucketAggs": [
+            {
+              "id": "2",
+              "type": "date_histogram",
+              "field": "@timestamp",
+              "settings": {
+                "interval": "auto",
+                "min_doc_count": "0"
+              }
+            }
+          ],
           "timeField": "@timestamp"
         }
       ],
@@ -1204,12 +1244,7 @@
           "uid": "es-logs"
         },
         "definition": "{\"find\":\"terms\",\"field\":\"environment\",\"size\":50}",
-        "query": {
-          "query": "",
-          "find": "terms",
-          "field": "environment.keyword",
-          "size": 50
-        },
+        "query": "{\"find\":\"terms\",\"field\":\"environment.keyword\",\"size\":50}",
         "refresh": 2,
         "regex": "",
         "sort": 1,
@@ -1234,12 +1269,7 @@
           "uid": "es-logs"
         },
         "definition": "{\"find\":\"terms\",\"field\":\"service_name\",\"size\":100}",
-        "query": {
-          "query": "",
-          "find": "terms",
-          "field": "service_name",
-          "size": 100
-        },
+        "query": "{\"find\":\"terms\",\"field\":\"service_name\",\"size\":100}",
         "refresh": 2,
         "regex": "",
         "sort": 1,
@@ -1264,12 +1294,7 @@
           "uid": "es-logs"
         },
         "definition": "{\"find\":\"terms\",\"field\":\"host_name\",\"size\":100}",
-        "query": {
-          "query": "",
-          "find": "terms",
-          "field": "host_name",
-          "size": 100
-        },
+        "query": "{\"find\":\"terms\",\"field\":\"host_name\",\"size\":100}",
         "refresh": 2,
         "regex": "",
         "sort": 1,
@@ -1295,8 +1320,14 @@
         "allValue": "*",
         "current": {
           "selected": true,
-          "text": ["ERROR", "FATAL"],
-          "value": ["ERROR", "FATAL"]
+          "text": [
+            "ERROR",
+            "FATAL"
+          ],
+          "value": [
+            "ERROR",
+            "FATAL"
+          ]
         },
         "options": [
           {
