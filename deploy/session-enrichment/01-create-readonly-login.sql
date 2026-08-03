@@ -15,16 +15,23 @@ GO
 USE [<<rndfwcore_db>>];
 GO
 
-CREATE USER [mon_session_lookup] FOR LOGIN [mon_session_lookup];
+-- DEFAULT_SCHEMA matters: the Session Lookup dashboard calls the procedure
+-- UNQUALIFIED (EXEC usp_MonSessionContext) so the dashboard JSON stays
+-- deployment-agnostic. SQL Server resolves that through this user's default
+-- schema, so it must be the schema 00-preflight-check.sql reported.
+CREATE USER [mon_session_lookup] FOR LOGIN [mon_session_lookup]
+    WITH DEFAULT_SCHEMA = <<schema>>;
 
 -- Deliberately NO role membership. Not db_datareader. Not db_owner.
--- The account's entire capability is one procedure:
-GRANT EXECUTE ON OBJECT::dbo.usp_MonSessionContext TO [mon_session_lookup];
+-- The account's entire capability is one procedure. Replace <<schema>> with
+-- the schema 00-preflight-check.sql reported -- it is NOT dbo on a stock
+-- framework install (e.g. master on an rnds4assets database).
+GRANT EXECUTE ON OBJECT::<<schema>>.usp_MonSessionContext TO [mon_session_lookup];
 
 -- OPTIONAL hardening. Ownership chaining means the proc still works, because
 -- permission checks on tables referenced by a same-owner proc are skipped
 -- entirely (including DENY). ONLY apply this if step 4 of the README's
 -- verification passes afterwards -- if CLIENTSESSIONLOG has a different
 -- owner, chaining breaks and this line breaks the lookup.
--- DENY SELECT ON SCHEMA::dbo TO [mon_session_lookup];
+-- DENY SELECT ON SCHEMA::<<schema>> TO [mon_session_lookup];
 GO

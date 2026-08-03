@@ -106,7 +106,7 @@
           },
           "format": "table",
           "rawQuery": true,
-          "rawSql": "EXEC dbo.usp_MonSessionContext @SessionId = ${session_id:sqlstring};",
+          "rawSql": "EXEC usp_MonSessionContext @SessionId = ${session_id:sqlstring};",
           "refId": "A"
         }
       ],
@@ -135,7 +135,7 @@
       "id": 2,
       "options": {
         "mode": "markdown",
-        "content": "This is an **on-demand, read-only** lookup against the monitored application's database, run only when you open this page for a specific session. Nothing here is stored in Elasticsearch or TimescaleDB.\n\nThe fields shown are a fixed allowlist defined in `dbo.usp_MonSessionContext` in the application database. The monitoring account can execute that procedure and nothing else — it cannot read any other table.\n\nIf a field you need is missing, that is a data-policy decision, not a bug: raise it with the customer's data owner."
+        "content": "This is an **on-demand, read-only** lookup against the monitored application's database, run only when you open this page for a specific session. Nothing here is stored in Elasticsearch or TimescaleDB.\n\nThe fields shown are a fixed allowlist defined in the `usp_MonSessionContext` procedure in the application database. The monitoring account can execute that procedure and nothing else — it cannot read any other table.\n\nIf a field you need is missing, that is a data-policy decision, not a bug: raise it with the customer's data owner."
       },
       "title": "About this lookup",
       "type": "text"

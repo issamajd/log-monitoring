@@ -15,7 +15,7 @@ SQL-parameter and secret masking is done in the **application / instrumentation 
 - `SessionID` is the primary support correlation key.
 - Safe context (session, operation, username, environment) is attached **by the app itself** as OTel attributes before telemetry leaves the process.
 - Sensitive or heavy context (customer/entity details) is resolved **on demand** at investigation time via a **read-only** SQL Server connection, and is not stored per-event.
-- The safe-field allowlist lives in `dbo.usp_MonSessionContext` in the application database; the monitoring login receives `EXECUTE` on that procedure and no table or role grants.
+- The safe-field allowlist lives in the `usp_MonSessionContext` procedure in the application database; the monitoring login receives `EXECUTE` on that procedure and no table or role grants.
 - `SESSION_ENRICHMENT` selects the enabled or disabled provisioning variant and defaults to `disabled`.
 - Per-customer setup and verification are documented in `deploy/session-enrichment/README.md` in the repository.
 - The lookup should cache results and avoid heavy queries against the app database.
