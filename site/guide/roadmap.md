@@ -11,7 +11,7 @@ The old plan is useful as a long-term architecture, but the build order now cent
 | Stage | Name | Outcome |
 |---|---|---|
 | **Milestone 1** | Support Triage Foundation | OpenTelemetry instrumentation, single-broker Kafka buffer, enrichment, Elasticsearch, TimescaleDB, Grafana dashboards, server health, and basic alerts. |
-| **Milestone 2** | Pipeline Reliability | Consumer scaling, dead-letter handling, replay tooling, backpressure, and ingestion reliability views on top of the Milestone 1 Kafka pipeline. |
+| **Milestone 2** | Pipeline Reliability | Consumer scaling, DLQ replay tooling (dead-letter routing itself landed in Milestone 1), backpressure, and ingestion reliability views on top of the Milestone 1 Kafka pipeline. |
 | **Milestone 3** | Log Intelligence | Richer event processing, deduplication, session/request timelines, pattern grouping, and stronger risky-SQL detection. |
 | **Milestone 4** | Operational Hardening | Offline-bundle polish, backup/restore, upgrade process, role-based access, retention validation, and production runbooks. |
 | **Milestone 5** | Proactive Alerting | Trend, absence, rate-of-change, and correlation alerts once baseline data is trustworthy. |
@@ -39,7 +39,7 @@ The old plan is useful as a long-term architecture, but the build order now cent
 ## Open questions to resolve during implementation
 
 - Exact daily log volume per typical customer.
-- Exact session lookup query and safe user/context fields.
-- Final Elasticsearch index mappings and shard strategy.
 - Exact offline-installer packaging method.
 - Threshold defaults after testing with real customer logs.
+
+Resolved so far: the session lookup query and safe-field allowlist (the `usp_MonSessionContext` procedure, live-verified — see `deploy/session-enrichment/README.md`) and the Elasticsearch index mappings/ILM (finalized in the `elasticsearch-init` templates — see [Architecture](./architecture)).

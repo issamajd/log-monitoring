@@ -37,6 +37,7 @@ export default defineConfig({
           { text: 'Architecture', link: '/guide/architecture' },
           { text: 'Deployment & sizing', link: '/guide/deployment-sizing' },
           { text: 'Support workflows', link: '/guide/support-workflows' },
+          { text: 'Verification runbook', link: '/guide/verification-runbook' },
           { text: 'Data & security', link: '/guide/data-security' },
           { text: 'Roadmap', link: '/guide/roadmap' }
         ]

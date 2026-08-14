@@ -28,13 +28,15 @@ datasources:
       timescaledb: true
     isDefault: true
 
-  # Elasticsearch for logs (logs-* alias)
+  # Elasticsearch for logs. Queries the "logs" ALIAS, not an index pattern:
+  # ILM owns index names and keeps the alias attached to every generation, so
+  # no rollover or rename can hide data from the dashboards.
   - name: Elasticsearch-Logs
     uid: es-logs
     type: elasticsearch
     access: proxy
     url: http://elasticsearch:9200
-    database: "logs-*"
+    database: "logs"
     jsonData:
       esVersion: "8.0.0"
       timeField: "@timestamp"
@@ -43,13 +45,13 @@ datasources:
       maxConcurrentShardRequests: 5
       includeFrozen: false
 
-  # Elasticsearch for traces (traces-* alias)
+  # Elasticsearch for traces — same alias-based indexing as es-logs above.
   - name: Elasticsearch-Traces
     uid: es-traces
     type: elasticsearch
     access: proxy
     url: http://elasticsearch:9200
-    database: "traces-*"
+    database: "traces"
     jsonData:
       esVersion: "8.0.0"
       timeField: "@timestamp"

@@ -26,8 +26,7 @@ internal static class Program
         {
             ("Parse OTLP JSON logs", ParseOtlpJsonLogs),
             ("Parse OTLP JSON metrics", ParseOtlpJsonMetrics),
-            ("Parse OTLP JSON traces", ParseOtlpJsonTraces),
-            ("Parse legacy OTLP Protobuf logs", ParseLegacyOtlpProtobufLogs)
+            ("Parse OTLP JSON traces", ParseOtlpJsonTraces)
         };
 
         foreach (var (name, test) in tests)
@@ -188,42 +187,6 @@ internal static class Program
         AssertEqual(2.5, records[0].DurationMs, "Span duration");
         AssertEqual("SELECT", records[0].DbOperation, "Span database operation");
         AssertEqual("session-42", records[0].SessionId, "Span session ID");
-    }
-
-    private static void ParseLegacyOtlpProtobufLogs()
-    {
-        var request = new ExportLogsServiceRequest
-        {
-            ResourceLogs =
-            {
-                new ResourceLogs
-                {
-                    Resource = CreateResource(),
-                    ScopeLogs =
-                    {
-                        new ScopeLogs
-                        {
-                            LogRecords =
-                            {
-                                new OtlpLogRecord
-                                {
-                                    TimeUnixNano = TimestampNanoseconds,
-                                    ObservedTimeUnixNano = TimestampNanoseconds,
-                                    SeverityNumber = SeverityNumber.Info,
-                                    Body = StringValue("Legacy Protobuf record")
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        };
-
-        var parser = new OtlpLogsParser(NullLogger<OtlpLogsParser>.Instance);
-        var records = parser.Parse(request.ToByteArray());
-
-        AssertEqual(1, records.Count, "Legacy log count");
-        AssertEqual("Legacy Protobuf record", records[0].Message, "Legacy log message");
     }
 
     private static Resource CreateResource()

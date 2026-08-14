@@ -78,10 +78,6 @@ services:
         kafka-topics --create --if-not-exists --bootstrap-server kafka:9092 --topic alerts --partitions 3 --replication-factor 1
         kafka-topics --create --if-not-exists --bootstrap-server kafka:9092 --topic dlq --partitions 3 --replication-factor 1 --config retention.ms=1209600000
 
-        # Existing deployments created telemetry-traces with 6 partitions; --create --if-not-exists
-        # is a no-op there, so align the partition count on upgrade (errors if already 12, hence || true).
-        kafka-topics --alter --bootstrap-server kafka:9092 --topic telemetry-traces --partitions 12 || true
-
         echo 'Topics created:'
         kafka-topics --list --bootstrap-server kafka:9092
     networks:
@@ -192,13 +188,17 @@ services:
             "policy": {
               "phases": {
                 "hot": { "min_age": "0ms", "actions": { "rollover": { "max_age": "1d", "max_primary_shard_size": "50gb" } } },
-                "warm": { "min_age": "2d", "actions": { "shrink": { "number_of_shards": 1 }, "forcemerge": { "max_num_segments": 1 } } },
+                "warm": { "min_age": "2d", "actions": { "forcemerge": { "max_num_segments": 1 } } },
                 "delete": { "min_age": "30d", "actions": { "delete": {} } }
               }
             }
           }'
 
-        # Create index template
+        # Create index template. Covers every field LogRecord serializes; unknown
+        # top-level strings fall to the keyword dynamic template instead of the
+        # default text+keyword pair. attributes/resource/instrumentation_scope are
+        # flattened (like traces) so unbounded rndfwcore attribute keys cannot
+        # explode the field count.
         curl --fail -sS -X PUT 'http://elasticsearch:9200/_index_template/logs-template' \
           -H 'Content-Type: application/json' \
           -d '{
@@ -211,14 +211,37 @@ services:
                 "index.lifecycle.rollover_alias": "logs"
               },
               "mappings": {
+                "dynamic_templates": [
+                  { "strings_as_keywords": { "match_mapping_type": "string", "mapping": { "type": "keyword", "ignore_above": 1024 } } }
+                ],
                 "properties": {
                   "@timestamp": { "type": "date" },
+                  "observed_timestamp": { "type": "date" },
                   "message": { "type": "text" },
                   "level": { "type": "keyword" },
+                  "severity_number": { "type": "integer" },
                   "service_name": { "type": "keyword" },
+                  "service_version": { "type": "keyword" },
                   "host_name": { "type": "keyword" },
+                  "environment": { "type": "keyword" },
                   "trace_id": { "type": "keyword" },
-                  "span_id": { "type": "keyword" }
+                  "span_id": { "type": "keyword" },
+                  "correlation_id": { "type": "keyword" },
+                  "user_id": { "type": "keyword" },
+                  "session_id": { "type": "keyword" },
+                  "request_id": { "type": "keyword" },
+                  "logger_name": { "type": "keyword" },
+                  "thread_name": { "type": "keyword" },
+                  "exception": {
+                    "properties": {
+                      "type": { "type": "keyword" },
+                      "message": { "type": "text" },
+                      "stacktrace": { "type": "text" }
+                    }
+                  },
+                  "attributes": { "type": "flattened" },
+                  "resource": { "type": "flattened" },
+                  "instrumentation_scope": { "type": "flattened" }
                 }
               }
             }
@@ -227,17 +250,24 @@ services:
         # Create initial index. No --fail: on an existing data volume this returns
         # 400 resource_already_exists, which must not abort the rest of the script
         # (set -e + --fail previously skipped every later step on re-runs).
+        echo 'logs-000001 bootstrap (a 400 below is expected on re-runs):'
         curl -sS -X PUT 'http://elasticsearch:9200/logs-000001' \
           -H 'Content-Type: application/json' \
           -d '{ "aliases": { "logs": { "is_write_index": true } } }'
+        echo
 
-        # Create traces ILM policy
+        # Create traces ILM policy (same warm forcemerge as logs). No shrink action:
+        # shrink replaces the index with a renamed shrink-* copy, which breaks
+        # every index-pattern-based operation for little gain on a single node.
+        # The Grafana datasources query the logs/traces ALIASES for the same
+        # reason — ILM owns index names, so nothing should depend on them.
         curl --fail -sS -X PUT 'http://elasticsearch:9200/_ilm/policy/traces-policy' \
           -H 'Content-Type: application/json' \
           -d '{
             "policy": {
               "phases": {
                 "hot": { "min_age": "0ms", "actions": { "rollover": { "max_age": "1d", "max_primary_shard_size": "50gb" } } },
+                "warm": { "min_age": "2d", "actions": { "forcemerge": { "max_num_segments": 1 } } },
                 "delete": { "min_age": "14d", "actions": { "delete": {} } }
               }
             }
@@ -256,6 +286,9 @@ services:
                 "index.lifecycle.rollover_alias": "traces"
               },
               "mappings": {
+                "dynamic_templates": [
+                  { "strings_as_keywords": { "match_mapping_type": "string", "mapping": { "type": "keyword", "ignore_above": 1024 } } }
+                ],
                 "properties": {
                   "trace_id": { "type": "keyword" },
                   "span_id": { "type": "keyword" },
@@ -289,7 +322,7 @@ services:
                   "duration_ms": { "type": "double" },
                   "db_rows_affected": { "type": "double" },
                   "error": { "type": "boolean" },
-                  "name": { "type": "text", "fields": { "keyword": { "type": "keyword", "ignore_above": 1024 } } },
+                  "name": { "type": "keyword", "ignore_above": 1024 },
                   "db_statement": { "type": "text" },
                   "status_message": { "type": "text" },
                   "@timestamp": { "type": "date" },
@@ -304,17 +337,11 @@ services:
           }'
 
         # Create initial traces index (no --fail: tolerate resource_already_exists on re-runs)
+        echo 'traces-000001 bootstrap (a 400 below is expected on re-runs):'
         curl -sS -X PUT 'http://elasticsearch:9200/traces-000001' \
           -H 'Content-Type: application/json' \
           -d '{ "aliases": { "traces": { "is_write_index": true } } }'
-
-        # Index templates only apply when an index is created; add the name.keyword
-        # sub-field to traces indices that already exist (additive, idempotent).
-        # Documents indexed before this gained the sub-field stay invisible to
-        # name.keyword aggregations until reindexed or rolled over.
-        curl --fail -sS -X PUT 'http://elasticsearch:9200/traces-*/_mapping' \
-          -H 'Content-Type: application/json' \
-          -d '{ "properties": { "name": { "type": "text", "fields": { "keyword": { "type": "keyword", "ignore_above": 1024 } } } } }'
+        echo
 
         echo 'Elasticsearch initialization complete!'
 

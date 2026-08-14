@@ -1,5 +1,5 @@
+using System.Text;
 using Google.Protobuf;
-using LogMonitoring.OtlpProto;
 using OpenTelemetry.Proto.Collector.Metrics.V1;
 using OpenTelemetry.Proto.Metrics.V1;
 using LogMonitoring.Consumers.Metrics.Models;
@@ -12,7 +12,7 @@ namespace LogMonitoring.Consumers.Metrics.Services;
 public interface IMetricsParser
 {
     /// <summary>
-    /// Parses metrics from an OTLP JSON payload or a legacy Protobuf payload.
+    /// Parses metrics from an OTLP JSON payload.
     /// </summary>
     List<MetricDataPoint> Parse(byte[] data);
 }
@@ -35,7 +35,8 @@ public class OtlpMetricsParser : IMetricsParser
 
         try
         {
-            var request = OtlpPayloadParser.ParseJsonOrProtobuf(ExportMetricsServiceRequest.Parser, data);
+            ExportMetricsServiceRequest request =
+                ExportMetricsServiceRequest.Parser.ParseJson(Encoding.UTF8.GetString(data));
 
             foreach (var resourceMetrics in request.ResourceMetrics)
             {

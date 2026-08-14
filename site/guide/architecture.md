@@ -25,7 +25,7 @@ The application keeps writing `SystemTrace_*.log` files as a **local backup**, b
 
 Elasticsearch holds searchable events and traces, TimescaleDB holds metrics and time-series summaries, and Grafana serves dashboards and alerts on top of both.
 
-**Kafka is part of Milestone 1.** The collector publishes each signal as human-readable OTLP JSON to its own topic (`telemetry-logs`, `telemetry-metrics`, `telemetry-traces`); dedicated consumers subscribe and write to the stores. Consumers also accept the legacy OTLP Protobuf payloads until records written before the JSON migration expire. The buffer decouples ingestion from storage: Elasticsearch or TimescaleDB can restart or fall behind without losing telemetry, and events can be replayed. Milestone 1 runs a **single-broker** Kafka; advanced reliability — consumer scaling, dead-letter handling, replay tooling, backpressure views — matures in Milestone 2.
+**Kafka is part of Milestone 1.** The collector publishes each signal as human-readable OTLP JSON to its own topic (`telemetry-logs`, `telemetry-metrics`, `telemetry-traces`); dedicated consumers subscribe and write to the stores. The buffer decouples ingestion from storage: Elasticsearch or TimescaleDB can restart or fall behind without losing telemetry, and events can be replayed. Unparseable messages and per-document Elasticsearch rejections already route to a `dlq` topic. Milestone 1 runs a **single-broker** Kafka; advanced reliability — consumer scaling, DLQ replay tooling, backpressure views — matures in Milestone 2.
 
 ## One source per concern — no double collection
 
@@ -78,16 +78,18 @@ This split keeps telemetry lean (the correlation key travels with every event; h
 
 ## Current state vs. what is left
 
+End-to-end checks for everything below are scripted in the [verification runbook](./verification-runbook).
+
 | Component | What we have now | What needs to be done |
 |---|---|---|
 | OpenTelemetry in the app | **`rndfwcore` chokepoints are instrumented** on its `log-monitoring` branch (API, jobs, BP, DQ, SQL spans + metrics, OTLP log bridge, session/user attributes) | Merge the branch; verify OTel exporter DLLs reach deployed host bin folders; instrument the standalone `service/` hosts if in scope |
 | .NET / process metrics | `AddRuntimeInstrumentation()` + `AddProcessInstrumentation()` enabled in the `server.service` host bootstrap | Nothing — keep Telegraf CLR counters removed |
 | Host metrics | Collector `hostmetrics` receiver removed; containerized Telegraf removed; native Windows config at `deploy/telegraf-windows/` | Install Telegraf as a Windows service on each host; fill in the real FWCORE service names in `win_services` |
-| Collector → Kafka routing | Collector publishes to per-signal Kafka topics; `telemetry-traces` at 12 partitions (kafka-init aligns pre-existing deployments on upgrade) | Nothing for Milestone 1 |
+| Collector → Kafka routing | Collector publishes to per-signal Kafka topics; `telemetry-traces` is created with 12 partitions | Nothing for Milestone 1 |
 | Kafka consumers | Logs, metrics **and traces** consumers build and run; OTLP protos vendored via `src/OtlpProto`; offsets commit only after successful storage flush; per-document Elasticsearch rejections and unparseable messages route to the `dlq` topic (transient 429/503 rejections are retried in-place first) | Replay tooling for the `dlq` topic (Milestone 2) |
-| On-demand enrichment | **Built (opt-in)** as a provisioned Grafana MSSQL lookup keyed on `SessionID` | Complete per-customer DBA setup and the first verification against a live application database |
-| Storage / search | Elasticsearch + TimescaleDB stand up via Docker Compose | Finalize index mappings, retention/ILM, and metric schemas |
-| Dashboards & alerts | Five provisioned support-first dashboards (triage/error search, slow operations, SQL insight, host & service health, pipeline health) plus file-provisioned alert rules with the Milestone 1 thresholds; a Prometheus service scrapes the collector's self-telemetry for the pipeline-health panels | Verify panel queries against a live stack (metric names flagged in panel descriptions); set real `ALERT_EMAIL_TO`/`ALERT_WEBHOOK_URL` per deployment |
+| On-demand enrichment | **Built (opt-in) and live-verified (2026-08-03)** against a real SQL Server: schema-portable deploy scripts (`<<schema>>` + preflight check), EXECUTE-only login returning the 15 allowlisted fields, direct SELECT denied | Per-customer DBA setup; rotate the `mon_session_lookup` password; pin a static SQL port |
+| Storage / search | Elasticsearch + TimescaleDB stand up via Docker Compose; **ES mappings/ILM finalized** in the `elasticsearch-init` templates (every LogRecord field mapped, flattened attributes, `strings_as_keywords` dynamic template, warm-phase ILM for logs and traces) | Finalize metric schemas in TimescaleDB |
+| Dashboards & alerts | Five provisioned support-first dashboards (triage/error search, slow operations, SQL insight, host & service health, pipeline health) plus file-provisioned alert rules with the Milestone 1 thresholds; a Prometheus service scrapes the collector's self-telemetry for the pipeline-health panels | Verify panel queries against a live stack per the [verification runbook](./verification-runbook) (metric names flagged in panel descriptions); set real `ALERT_EMAIL_TO`/`ALERT_WEBHOOK_URL` per deployment |
 | SystemTrace parser | Working pipe-delimited parser with unit tests | **Nothing** — kept in the repository unwired; SystemTrace files are a local backup and are not ingested |
 
 ::: info Architecture principle

@@ -1,5 +1,5 @@
+using System.Text;
 using Google.Protobuf;
-using LogMonitoring.OtlpProto;
 using OpenTelemetry.Proto.Collector.Trace.V1;
 using OpenTelemetry.Proto.Trace.V1;
 using LogMonitoring.Consumers.Traces.Models;
@@ -12,7 +12,7 @@ namespace LogMonitoring.Consumers.Traces.Services;
 public interface ITracesParser
 {
     /// <summary>
-    /// Parses traces from an OTLP JSON payload or a legacy Protobuf payload.
+    /// Parses traces from an OTLP JSON payload.
     /// </summary>
     List<SpanRecord> Parse(byte[] data);
 }
@@ -31,7 +31,7 @@ public class OtlpTracesParser : ITracesParser
     {
         List<SpanRecord> result = new List<SpanRecord>();
         ExportTraceServiceRequest request =
-            OtlpPayloadParser.ParseJsonOrProtobuf(ExportTraceServiceRequest.Parser, data);
+            ExportTraceServiceRequest.Parser.ParseJson(Encoding.UTF8.GetString(data));
 
         foreach (OpenTelemetry.Proto.Trace.V1.ResourceSpans resourceSpans in request.ResourceSpans)
         {

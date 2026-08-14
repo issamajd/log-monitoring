@@ -1460,7 +1460,7 @@
             {
               "id": "4",
               "type": "terms",
-              "field": "name.keyword",
+              "field": "name",
               "settings": {
                 "size": "20",
                 "order": "desc",

@@ -356,7 +356,7 @@
             {
               "id": "1",
               "type": "cardinality",
-              "field": "session_id.keyword"
+              "field": "session_id"
             }
           ],
           "bucketAggs": [
@@ -921,7 +921,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "exception.type.keyword"
+              "options": "exception.type"
             },
             "properties": [
               {
@@ -979,7 +979,7 @@
             {
               "id": "3",
               "type": "terms",
-              "field": "exception.type.keyword",
+              "field": "exception.type",
               "settings": {
                 "size": "20",
                 "order": "desc",
@@ -1244,7 +1244,7 @@
           "uid": "es-logs"
         },
         "definition": "{\"find\":\"terms\",\"field\":\"environment\",\"size\":50}",
-        "query": "{\"find\":\"terms\",\"field\":\"environment.keyword\",\"size\":50}",
+        "query": "{\"find\":\"terms\",\"field\":\"environment\",\"size\":50}",
         "refresh": 2,
         "regex": "",
         "sort": 1,
