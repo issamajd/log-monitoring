@@ -113,7 +113,14 @@ public class OtlpMetricsParser : IMetricsParser
                 break;
 
             case Metric.DataOneofCase.ExponentialHistogram:
-                // Handle exponential histogram if needed
+                result.AddRange(ExtractExponentialHistogramDataPoints(
+                    metric.ExponentialHistogram, metricName, unit, resourceAttrs));
+                break;
+
+            default:
+                _logger.LogWarning(
+                    "Dropping metric {MetricName}: unsupported OTLP data case {DataCase}",
+                    metricName, metric.DataCase);
                 break;
         }
 
@@ -188,6 +195,35 @@ public class OtlpMetricsParser : IMetricsParser
                     $"{metricName}_bucket", dp.BucketCounts[i], "histogram", unit, time, bucketLabels, resourceAttrs);
             }
         }
+    }
+
+    /// <summary>
+    /// Emits count and sum for a base-2 exponential histogram. The per-bucket detail is
+    /// deliberately dropped: its bounds are exponential rather than the explicit `le`
+    /// bounds the dashboards aggregate on, so converting them would be lossy guesswork.
+    /// Count and sum are exact, which keeps rate and average panels correct.
+    /// </summary>
+    private IEnumerable<MetricDataPoint> ExtractExponentialHistogramDataPoints(
+        ExponentialHistogram histogram, string metricName, string unit, ResourceAttributes resourceAttrs)
+    {
+        foreach (ExponentialHistogramDataPoint dp in histogram.DataPoints)
+        {
+            DateTimeOffset time = DateTimeOffset.FromUnixTimeMilliseconds((long)(dp.TimeUnixNano / 1_000_000));
+            Dictionary<string, string> labels = ExtractLabels(dp.Attributes);
+
+            yield return CreateDataPoint(
+                $"{metricName}_count", dp.Count, "exponential_histogram", unit, time, labels, resourceAttrs);
+
+            if (dp.HasSum)
+            {
+                yield return CreateDataPoint(
+                    $"{metricName}_sum", dp.Sum, "exponential_histogram", unit, time, labels, resourceAttrs);
+            }
+        }
+
+        _logger.LogDebug(
+            "Emitted count/sum only for exponential histogram {MetricName}; bucket detail is not stored",
+            metricName);
     }
 
     private static IEnumerable<MetricDataPoint> ExtractSummaryDataPoints(
