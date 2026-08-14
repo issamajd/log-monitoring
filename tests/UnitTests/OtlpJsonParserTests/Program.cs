@@ -26,7 +26,8 @@ internal static class Program
         {
             ("Parse OTLP JSON logs", ParseOtlpJsonLogs),
             ("Parse OTLP JSON metrics", ParseOtlpJsonMetrics),
-            ("Parse OTLP JSON traces", ParseOtlpJsonTraces)
+            ("Parse OTLP JSON traces", ParseOtlpJsonTraces),
+            ("Collector hex trace/span IDs survive parsing", ParseCollectorHexIds)
         };
 
         foreach (var (name, test) in tests)
@@ -187,6 +188,94 @@ internal static class Program
         AssertEqual(2.5, records[0].DurationMs, "Span duration");
         AssertEqual("SELECT", records[0].DbOperation, "Span database operation");
         AssertEqual("session-42", records[0].SessionId, "Span session ID");
+    }
+
+    /// <summary>
+    /// The other tests build their payloads with <see cref="JsonFormatter"/>, which emits
+    /// base64 IDs per the Protobuf JSON spec. The real collector emits OTLP/JSON, where
+    /// trace and span IDs are hex strings, so only a hand-written payload exercises the
+    /// path that actually runs in production.
+    /// </summary>
+    private static void ParseCollectorHexIds()
+    {
+        const string TraceId = "0123456789abcdef0123456789abcdef";
+        const string SpanId = "0123456789abcdef";
+        const string ParentSpanId = "fedcba9876543210";
+
+        string tracesJson = $$"""
+        {
+          "resourceSpans": [{
+            "resource": { "attributes": [
+              { "key": "service.name", "value": { "stringValue": "rndfwcore-server" } }
+            ]},
+            "scopeSpans": [{ "spans": [{
+              "traceId": "{{TraceId}}",
+              "spanId": "{{SpanId}}",
+              "parentSpanId": "{{ParentSpanId}}",
+              "name": "hex-id-span",
+              "kind": 2,
+              "startTimeUnixNano": "{{TimestampNanoseconds}}",
+              "endTimeUnixNano": "{{TimestampNanoseconds}}"
+            }]}]
+          }]
+        }
+        """;
+
+        List<Consumers.Traces.Models.SpanRecord> spans =
+            new OtlpTracesParser(NullLogger<OtlpTracesParser>.Instance)
+                .Parse(Encoding.UTF8.GetBytes(tracesJson));
+
+        AssertEqual(1, spans.Count, "Span count");
+        AssertEqual(TraceId, spans[0].TraceId, "Span trace ID");
+        AssertEqual(SpanId, spans[0].SpanId, "Span span ID");
+        AssertEqual(ParentSpanId, spans[0].ParentSpanId, "Span parent span ID");
+
+        string logsJson = $$"""
+        {
+          "resourceLogs": [{
+            "resource": { "attributes": [
+              { "key": "service.name", "value": { "stringValue": "rndfwcore-server" } }
+            ]},
+            "scopeLogs": [{ "logRecords": [{
+              "timeUnixNano": "{{TimestampNanoseconds}}",
+              "observedTimeUnixNano": "{{TimestampNanoseconds}}",
+              "severityNumber": 17,
+              "body": { "stringValue": "correlated log" },
+              "traceId": "{{TraceId}}",
+              "spanId": "{{SpanId}}"
+            }]}]
+          }]
+        }
+        """;
+
+        List<Consumers.Logs.Models.LogRecord> logs =
+            new OtlpLogsParser(NullLogger<OtlpLogsParser>.Instance)
+                .Parse(Encoding.UTF8.GetBytes(logsJson));
+
+        AssertEqual(1, logs.Count, "Log count");
+        AssertEqual(TraceId, logs[0].TraceId, "Log trace ID");
+        AssertEqual(SpanId, logs[0].SpanId, "Log span ID");
+
+        // A log with no correlation must stay null rather than becoming empty-string hex.
+        string noIdsJson = """
+        {
+          "resourceLogs": [{
+            "scopeLogs": [{ "logRecords": [{
+              "timeUnixNano": "1721568000123000000",
+              "severityNumber": 9,
+              "body": { "stringValue": "uncorrelated log" }
+            }]}]
+          }]
+        }
+        """;
+
+        List<Consumers.Logs.Models.LogRecord> uncorrelated =
+            new OtlpLogsParser(NullLogger<OtlpLogsParser>.Instance)
+                .Parse(Encoding.UTF8.GetBytes(noIdsJson));
+
+        AssertEqual(1, uncorrelated.Count, "Uncorrelated log count");
+        AssertEqual(null, uncorrelated[0].TraceId, "Uncorrelated trace ID");
+        AssertEqual(null, uncorrelated[0].SpanId, "Uncorrelated span ID");
     }
 
     private static Resource CreateResource()

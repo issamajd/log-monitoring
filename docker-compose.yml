@@ -251,14 +251,22 @@ services:
         # After the first ILM rollover the alias points at a later generation and
         # logs-000001 may be gone entirely, so re-creating it is wrong rather than
         # merely redundant: it would claim is_write_index for a second index.
-        if curl --fail -s -o /dev/null 'http://elasticsearch:9200/_alias/logs'; then
-          echo 'logs alias exists; ILM owns the index names, nothing to bootstrap'
-        else
+        # Match 404 exactly. Treating any non-2xx as "absent" would send a transient 503
+        # (the healthcheck accepts yellow, so the cluster may still be recovering) down
+        # the bootstrap path, where the PUT fails, --fail returns non-zero and set -e
+        # aborts before the traces template is ever created.
+        logs_alias_status=$$(curl -s -o /dev/null -w '%{http_code}' 'http://elasticsearch:9200/_alias/logs')
+        if [ "$$logs_alias_status" = "404" ]; then
           echo 'No logs alias; bootstrapping logs-000001 as the write index'
           curl --fail -sS -X PUT 'http://elasticsearch:9200/logs-000001' \
             -H 'Content-Type: application/json' \
             -d '{ "aliases": { "logs": { "is_write_index": true } } }'
           echo
+        elif [ "$$logs_alias_status" = "200" ]; then
+          echo 'logs alias exists; ILM owns the index names, nothing to bootstrap'
+        else
+          echo "Unexpected status $$logs_alias_status probing the logs alias; aborting"
+          exit 1
         fi
 
         # Create traces ILM policy (same warm forcemerge as logs). No shrink action:
@@ -342,14 +350,19 @@ services:
           }'
 
         # Bootstrap the traces write index on the same alias-absent condition as logs.
-        if curl --fail -s -o /dev/null 'http://elasticsearch:9200/_alias/traces'; then
-          echo 'traces alias exists; ILM owns the index names, nothing to bootstrap'
-        else
+        # Same exact-404 handling as the logs alias above.
+        traces_alias_status=$$(curl -s -o /dev/null -w '%{http_code}' 'http://elasticsearch:9200/_alias/traces')
+        if [ "$$traces_alias_status" = "404" ]; then
           echo 'No traces alias; bootstrapping traces-000001 as the write index'
           curl --fail -sS -X PUT 'http://elasticsearch:9200/traces-000001' \
             -H 'Content-Type: application/json' \
             -d '{ "aliases": { "traces": { "is_write_index": true } } }'
           echo
+        elif [ "$$traces_alias_status" = "200" ]; then
+          echo 'traces alias exists; ILM owns the index names, nothing to bootstrap'
+        else
+          echo "Unexpected status $$traces_alias_status probing the traces alias; aborting"
+          exit 1
         fi
 
         echo 'Elasticsearch initialization complete!'

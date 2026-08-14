@@ -213,6 +213,16 @@ curl.exe -s "http://localhost:9200/traces/_search?q=service_name:verify-runbook&
 
 Expect `hits.total.value` ≥ 1 on each. Allow a few seconds for the consumer batch and index refresh.
 
+Then check the **identifiers**, not just the hit count:
+
+```powershell
+curl.exe -s "http://localhost:9200/traces/_search?q=name:verify-span" | ConvertFrom-Json |
+  ForEach-Object { $_.hits.hits[0]._source } |
+  Select-Object trace_id, span_id
+```
+
+`trace_id` must be **exactly the 32 characters you posted** (`0123456789abcdef0123456789abcdef`) and `span_id` the 16 you posted. A 48- or 24-character value means trace IDs are being decoded as base64 rather than hex, which silently destroys log↔trace correlation while every hit-count check above still passes. That regression shipped once already — see [`OtlpJsonIds`](https://github.com/issamajd/log-monitoring/blob/master/src/OtlpProto/OtlpJsonIds.cs).
+
 **Hop 3 — TimescaleDB.** The metrics consumer wrote to `metrics.raw_metrics`:
 
 ```powershell
@@ -279,6 +289,10 @@ To disable: set `SESSION_ENRICHMENT=disabled` and `docker compose up -d --force-
 Elasticsearch applies an index template only when an index is **created**. Documents already indexed under an older template keep their old mapping forever — a field that used to be `text` will not answer a bare keyword aggregation no matter how the template changes. There is no in-place migration and no reindex step in this project: the sanctioned way to adopt a mapping change is to drop the data and start clean.
 
 This is destructive and telemetry is reproducible, so it is the right trade for a pre-production stack. **Do not run this on a deployment whose telemetry is still needed.**
+
+::: danger Upgrading without wiping leaves the dashboards broken, not merely stale
+Indices created before the keyword mapping change still map `session_id`, `environment`, `exception.type` and the traces `name` as `text`. A terms or cardinality aggregation on a `text` field does not return an empty result — Elasticsearch **fails the query** with `Fielddata is disabled`. Because the `logs`/`traces` alias spans old and new generations for the whole retention window (30 and 14 days), those panels stay broken until the last pre-upgrade index ages out. Wipe, or accept broken dashboards until retention catches up.
+:::
 
 ```powershell
 docker compose down

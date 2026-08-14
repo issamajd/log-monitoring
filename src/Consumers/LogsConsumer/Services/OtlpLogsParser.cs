@@ -1,5 +1,6 @@
 using System.Text;
 using Google.Protobuf;
+using LogMonitoring.OtlpProto;
 using OpenTelemetry.Proto.Collector.Logs.V1;
 using OpenTelemetry.Proto.Logs.V1;
 using LogMonitoring.Consumers.Logs.Models;
@@ -64,6 +65,13 @@ public class OtlpLogsParser : ILogsParser
         var attrs = new ResourceAttributes();
         var resourceDict = new Dictionary<string, object>();
 
+        // resource is optional in OTLP; without this guard one resource-less batch
+        // throws and sends every record in it to the DLQ.
+        if (resourceLogs.Resource == null)
+        {
+            return attrs;
+        }
+
         foreach (var attr in resourceLogs.Resource.Attributes)
         {
             var value = GetAttributeValue(attr.Value);
@@ -109,8 +117,8 @@ public class OtlpLogsParser : ILogsParser
             ServiceVersion = resourceAttrs.ServiceVersion,
             HostName = resourceAttrs.HostName,
             Environment = resourceAttrs.Environment,
-            TraceId = logRecord.TraceId.IsEmpty ? null : ConvertBytesToHex(logRecord.TraceId),
-            SpanId = logRecord.SpanId.IsEmpty ? null : ConvertBytesToHex(logRecord.SpanId),
+            TraceId = OtlpJsonIds.ToHex(logRecord.TraceId, OtlpJsonIds.TraceIdBytes),
+            SpanId = OtlpJsonIds.ToHex(logRecord.SpanId, OtlpJsonIds.SpanIdBytes),
             InstrumentationScope = scope,
             Resource = resourceAttrs.ResourceDict
         };
@@ -225,10 +233,6 @@ public class OtlpLogsParser : ILogsParser
         };
     }
 
-    private static string ConvertBytesToHex(ByteString bytes)
-    {
-        return Convert.ToHexString(bytes.ToByteArray()).ToLowerInvariant();
-    }
 
     private class ResourceAttributes
     {

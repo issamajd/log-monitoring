@@ -1,5 +1,6 @@
 using System.Text;
 using Google.Protobuf;
+using LogMonitoring.OtlpProto;
 using OpenTelemetry.Proto.Collector.Trace.V1;
 using OpenTelemetry.Proto.Trace.V1;
 using LogMonitoring.Consumers.Traces.Models;
@@ -57,6 +58,13 @@ public class OtlpTracesParser : ITracesParser
         var attrs = new ResourceAttributes();
         var resourceDict = new Dictionary<string, object>();
 
+        // resource is optional in OTLP; without this guard one resource-less batch
+        // throws and sends every span in it to the DLQ.
+        if (resourceSpans.Resource == null)
+        {
+            return attrs;
+        }
+
         foreach (var attr in resourceSpans.Resource.Attributes)
         {
             var value = GetAttributeValue(attr.Value);
@@ -96,9 +104,9 @@ public class OtlpTracesParser : ITracesParser
             Timestamp = DateTimeOffset.FromUnixTimeMilliseconds((long)(span.StartTimeUnixNano / 1_000_000)),
             EndTimestamp = DateTimeOffset.FromUnixTimeMilliseconds((long)(span.EndTimeUnixNano / 1_000_000)),
             DurationMs = (span.EndTimeUnixNano - span.StartTimeUnixNano) / 1_000_000.0,
-            TraceId = span.TraceId.IsEmpty ? null : ConvertBytesToHex(span.TraceId),
-            SpanId = span.SpanId.IsEmpty ? null : ConvertBytesToHex(span.SpanId),
-            ParentSpanId = span.ParentSpanId.IsEmpty ? null : ConvertBytesToHex(span.ParentSpanId),
+            TraceId = OtlpJsonIds.ToHex(span.TraceId, OtlpJsonIds.TraceIdBytes),
+            SpanId = OtlpJsonIds.ToHex(span.SpanId, OtlpJsonIds.SpanIdBytes),
+            ParentSpanId = OtlpJsonIds.ToHex(span.ParentSpanId, OtlpJsonIds.SpanIdBytes),
             Name = span.Name,
             Kind = MapSpanKind(span.Kind),
             StatusCode = statusCode,
@@ -263,11 +271,6 @@ public class OtlpTracesParser : ITracesParser
             Status.Types.StatusCode.Error => "ERROR",
             _ => "UNSET"
         };
-    }
-
-    private static string ConvertBytesToHex(ByteString bytes)
-    {
-        return Convert.ToHexString(bytes.ToByteArray()).ToLowerInvariant();
     }
 
     private class ResourceAttributes

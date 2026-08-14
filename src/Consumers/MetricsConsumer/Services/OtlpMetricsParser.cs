@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text;
 using Google.Protobuf;
 using OpenTelemetry.Proto.Collector.Metrics.V1;
@@ -65,6 +66,13 @@ public class OtlpMetricsParser : IMetricsParser
         OpenTelemetry.Proto.Metrics.V1.ResourceMetrics resourceMetrics)
     {
         var attrs = new ResourceAttributes();
+
+        // resource is optional in OTLP; without this guard one resource-less batch
+        // throws and drops every data point in it.
+        if (resourceMetrics.Resource == null)
+        {
+            return attrs;
+        }
 
         foreach (var attr in resourceMetrics.Resource.Attributes)
         {
@@ -188,7 +196,10 @@ public class OtlpMetricsParser : IMetricsParser
                 var bound = i < dp.ExplicitBounds.Count ? dp.ExplicitBounds[i] : double.PositiveInfinity;
                 var bucketLabels = new Dictionary<string, string>(labels)
                 {
-                    ["le"] = bound == double.PositiveInfinity ? "+Inf" : bound.ToString()
+                    // Invariant: a comma decimal separator would break the dashboards' le matching.
+                    ["le"] = bound == double.PositiveInfinity
+                        ? "+Inf"
+                        : bound.ToString(CultureInfo.InvariantCulture)
                 };
 
                 yield return CreateDataPoint(
@@ -247,7 +258,7 @@ public class OtlpMetricsParser : IMetricsParser
             {
                 var quantileLabels = new Dictionary<string, string>(labels)
                 {
-                    ["quantile"] = quantile.Quantile.ToString()
+                    ["quantile"] = quantile.Quantile.ToString(CultureInfo.InvariantCulture)
                 };
 
                 yield return CreateDataPoint(
