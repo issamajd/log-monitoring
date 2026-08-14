@@ -247,14 +247,19 @@ services:
             }
           }'
 
-        # Create initial index. No --fail: on an existing data volume this returns
-        # 400 resource_already_exists, which must not abort the rest of the script
-        # (set -e + --fail previously skipped every later step on re-runs).
-        echo 'logs-000001 bootstrap (a 400 below is expected on re-runs):'
-        curl -sS -X PUT 'http://elasticsearch:9200/logs-000001' \
-          -H 'Content-Type: application/json' \
-          -d '{ "aliases": { "logs": { "is_write_index": true } } }'
-        echo
+        # Bootstrap the write index only when the alias is absent, i.e. a fresh volume.
+        # After the first ILM rollover the alias points at a later generation and
+        # logs-000001 may be gone entirely, so re-creating it is wrong rather than
+        # merely redundant: it would claim is_write_index for a second index.
+        if curl --fail -s -o /dev/null 'http://elasticsearch:9200/_alias/logs'; then
+          echo 'logs alias exists; ILM owns the index names, nothing to bootstrap'
+        else
+          echo 'No logs alias; bootstrapping logs-000001 as the write index'
+          curl --fail -sS -X PUT 'http://elasticsearch:9200/logs-000001' \
+            -H 'Content-Type: application/json' \
+            -d '{ "aliases": { "logs": { "is_write_index": true } } }'
+          echo
+        fi
 
         # Create traces ILM policy (same warm forcemerge as logs). No shrink action:
         # shrink replaces the index with a renamed shrink-* copy, which breaks
@@ -336,12 +341,16 @@ services:
             }
           }'
 
-        # Create initial traces index (no --fail: tolerate resource_already_exists on re-runs)
-        echo 'traces-000001 bootstrap (a 400 below is expected on re-runs):'
-        curl -sS -X PUT 'http://elasticsearch:9200/traces-000001' \
-          -H 'Content-Type: application/json' \
-          -d '{ "aliases": { "traces": { "is_write_index": true } } }'
-        echo
+        # Bootstrap the traces write index on the same alias-absent condition as logs.
+        if curl --fail -s -o /dev/null 'http://elasticsearch:9200/_alias/traces'; then
+          echo 'traces alias exists; ILM owns the index names, nothing to bootstrap'
+        else
+          echo 'No traces alias; bootstrapping traces-000001 as the write index'
+          curl --fail -sS -X PUT 'http://elasticsearch:9200/traces-000001' \
+            -H 'Content-Type: application/json' \
+            -d '{ "aliases": { "traces": { "is_write_index": true } } }'
+          echo
+        fi
 
         echo 'Elasticsearch initialization complete!'
 

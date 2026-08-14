@@ -49,7 +49,7 @@ docker compose ps --all
 docker exec kafka kafka-topics --describe --bootstrap-server localhost:9092
 ```
 
-Expect `telemetry-logs`, `telemetry-metrics`, `telemetry-traces` with `PartitionCount: 12` each, plus `alerts` and `dlq` with `PartitionCount: 3` — `--describe` (not `--list`) is what proves the partition counts, including that `kafka-init` realigned a pre-existing `telemetry-traces` to 12 on upgrade.
+Expect `telemetry-logs`, `telemetry-metrics`, `telemetry-traces` with `PartitionCount: 12` each, plus `alerts` and `dlq` with `PartitionCount: 3` — `--describe` (not `--list`) is what proves the partition counts, which `--list` cannot show.
 
 **Elasticsearch** cluster and init artifacts:
 
@@ -274,6 +274,29 @@ docker compose exec grafana cat /etc/grafana/provisioning/datasources/session-en
 
 To disable: set `SESSION_ENRICHMENT=disabled` and `docker compose up -d --force-recreate grafana` (this actively deletes the datasource), blank the MSSQL variables, and have the DBA revoke the SQL login. The `--force-recreate` is required whenever the enrichment flag flips on a running stack — the bind mounts change and plain `up -d` does not remount them.
 
+## Resetting the stores to adopt a mapping change
+
+Elasticsearch applies an index template only when an index is **created**. Documents already indexed under an older template keep their old mapping forever — a field that used to be `text` will not answer a bare keyword aggregation no matter how the template changes. There is no in-place migration and no reindex step in this project: the sanctioned way to adopt a mapping change is to drop the data and start clean.
+
+This is destructive and telemetry is reproducible, so it is the right trade for a pre-production stack. **Do not run this on a deployment whose telemetry is still needed.**
+
+```powershell
+docker compose down
+docker volume rm log-monitoring_elasticsearch-data
+docker compose up -d --build
+```
+
+Drop `log-monitoring_kafka-kraft-data`, `log-monitoring_timescaledb-data`, and `log-monitoring_otel-checkpoint` in the same way if you want the buffer, metrics, and collector checkpoint cleared too. Prefix the volume names with your Compose project name if it is not `log-monitoring` — confirm with `docker volume ls`.
+
+To wipe only the telemetry while keeping the volume and the ILM policies, delete the indices directly and let `elasticsearch-init` rebuild them on the next `up`:
+
+```powershell
+curl.exe -X DELETE "http://localhost:9200/logs-*,traces-*"
+docker compose up -d --force-recreate elasticsearch-init
+```
+
+**Success looks like:** `_cat/indices` shows only `logs-000001` and `traces-000001`, and `_cat/aliases` shows exactly one `is_write_index: true` per alias. Re-run Stage 3 to repopulate.
+
 ## Gotchas
 
 ### `$` in unquoted `.env` values
@@ -298,7 +321,9 @@ The compose healthcheck only runs `otelcol-contrib validate --config`. Real live
 
 ### Init containers are idempotent by design
 
-`elasticsearch-init` deliberately omits `--fail` on its two index-creation PUTs — a 400 `resource_already_exists` on re-runs is expected and must not abort init. `kafka-init` creates topics with `--if-not-exists` for the same reason.
+`elasticsearch-init` bootstraps `logs-000001` / `traces-000001` only when the `logs` / `traces` alias is absent, so re-runs against an existing volume skip the PUT instead of firing it and swallowing the error. This matters after the first ILM rollover: the write alias then points at a later generation and `-000001` may have been deleted outright, so blindly re-creating it would claim `is_write_index` for a second index. Every call in the script uses `--fail`, so a genuine init error is loud rather than silently tolerated. `kafka-init` creates topics with `--if-not-exists` for the same reason.
+
+There is no schema-migration path for existing indices: mapping changes apply to newly created indices only. To adopt a mapping change, wipe and start clean per [resetting the stores](#resetting-the-stores-to-adopt-a-mapping-change).
 
 ### Telegraf is not part of the Docker stack
 
