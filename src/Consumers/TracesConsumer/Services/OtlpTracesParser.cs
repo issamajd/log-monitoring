@@ -1,4 +1,6 @@
+using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 using Google.Protobuf;
 using LogMonitoring.OtlpProto;
 using OpenTelemetry.Proto.Collector.Trace.V1;
@@ -173,6 +175,12 @@ public class OtlpTracesParser : ITracesParser
                     case "rndfw.sql.danger_flags":
                         record.SqlDangerFlags = value.ToString();
                         break;
+                    case "rndfw.sql.fingerprint":
+                        record.SqlFingerprint = value.ToString();
+                        break;
+                    case "rndfw.api.operation":
+                        record.ApiOperation = value.ToString();
+                        break;
                     case "rndfw.sql.id":
                         record.SqlId = value.ToString();
                         break;
@@ -244,7 +252,47 @@ public class OtlpTracesParser : ITracesParser
         record.OperationId ??= string.Empty;
         record.UserName ??= string.Empty;
 
+        if (!string.IsNullOrWhiteSpace(record.DbStatement))
+        {
+            string statement = WhitespaceRun.Replace(record.DbStatement.Trim(), " ");
+            record.SqlFingerprint ??= FingerprintStatement(statement);
+            record.DbStatementPreview = PreviewStatement(statement);
+        }
+
         return record;
+    }
+
+    private static readonly Regex WhitespaceRun = new Regex(@"\s+", RegexOptions.Compiled);
+
+    private const int StatementPreviewLength = 200;
+
+    /// <summary>
+    /// First 16 hex characters of the statement's SHA-256. rndfwcore masks literals before
+    /// emitting db.statement, so every execution of one statement shape hashes the same.
+    /// Matches rndfwcore's own rndfw.sql.fingerprint for statements under its 4096-character cut.
+    /// </summary>
+    private static string FingerprintStatement(string normalizedStatement)
+    {
+        byte[] hash = SHA256.HashData(Encoding.UTF8.GetBytes(normalizedStatement));
+        return Convert.ToHexString(hash, 0, 8).ToLowerInvariant();
+    }
+
+    /// <summary>
+    /// A SELECT's column list says little about it, so the preview starts at FROM.
+    /// </summary>
+    private static string PreviewStatement(string normalizedStatement)
+    {
+        string preview = normalizedStatement;
+        if (preview.StartsWith("SELECT ", StringComparison.OrdinalIgnoreCase))
+        {
+            int fromIndex = preview.IndexOf(" FROM ", StringComparison.OrdinalIgnoreCase);
+            if (fromIndex > 0)
+                preview = "SELECT … " + preview.Substring(fromIndex + 1);
+        }
+
+        return preview.Length <= StatementPreviewLength
+            ? preview
+            : preview.Substring(0, StatementPreviewLength) + "…";
     }
 
     private static object? GetAttributeValue(OpenTelemetry.Proto.Common.V1.AnyValue value)
