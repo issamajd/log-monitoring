@@ -1431,8 +1431,28 @@
       ],
       "title": "Spans in trace (context)",
       "type": "table",
-      "description": "Set the Trace ID variable to populate this drill-down.",
+      "description": "Set the Trace ID variable to populate this drill-down. Rows are in start order, so a caller comes before what it calls; parent_span_id is the span_id of the calling span.",
       "transformations": [
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "field": "start_time_us",
+                "desc": false
+              }
+            ]
+          }
+        },
+        {
+          "id": "filterFieldsByName",
+          "options": {
+            "exclude": {
+              "pattern": "^(sort|highlight|_id|_index|_type|start_time_us|attributes\\..*|resource\\..*)$"
+            }
+          }
+        },
         {
           "id": "organize",
           "options": {

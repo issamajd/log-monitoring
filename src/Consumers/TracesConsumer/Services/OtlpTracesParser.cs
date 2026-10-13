@@ -103,6 +103,7 @@ public class OtlpTracesParser : ITracesParser
         {
             Timestamp = DateTimeOffset.FromUnixTimeMilliseconds((long)(span.StartTimeUnixNano / 1_000_000)),
             EndTimestamp = DateTimeOffset.FromUnixTimeMilliseconds((long)(span.EndTimeUnixNano / 1_000_000)),
+            StartTimeUs = (long)(span.StartTimeUnixNano / 1_000),
             DurationMs = (span.EndTimeUnixNano - span.StartTimeUnixNano) / 1_000_000.0,
             TraceId = OtlpJsonIds.ToHex(span.TraceId, OtlpJsonIds.TraceIdBytes),
             SpanId = OtlpJsonIds.ToHex(span.SpanId, OtlpJsonIds.SpanIdBytes),
