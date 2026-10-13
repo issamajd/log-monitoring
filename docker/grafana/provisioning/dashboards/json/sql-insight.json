@@ -1141,7 +1141,7 @@
               "settings": {
                 "size": "25",
                 "order": "desc",
-                "orderBy": "1",
+                "orderBy": "1[95]",
                 "min_doc_count": "1"
               }
             }
@@ -1158,8 +1158,8 @@
             "excludeByName": {},
             "indexByName": {},
             "renameByName": {
-              "Percentiles 95 duration_ms": "p95",
-              "Max duration_ms": "max"
+              "p95.0 duration_ms": "p95",
+              "Max": "max"
             }
           }
         }
@@ -1392,7 +1392,7 @@
             "excludeByName": {},
             "indexByName": {},
             "renameByName": {
-              "Percentiles 95 duration_ms": "p95"
+              "p95.0 duration_ms": "p95"
             }
           }
         }

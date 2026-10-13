@@ -1274,8 +1274,8 @@
             "excludeByName": {},
             "indexByName": {},
             "renameByName": {
-              "Percentiles 95 duration_ms": "p95",
-              "Max duration_ms": "max",
+              "p95.0 duration_ms": "p95",
+              "Max": "max",
               "Count": "Count"
             }
           }
@@ -1481,8 +1481,8 @@
             "excludeByName": {},
             "indexByName": {},
             "renameByName": {
-              "Percentiles 95 duration_ms": "p95",
-              "Max duration_ms": "max",
+              "p95.0 duration_ms": "p95",
+              "Max": "max",
               "Count": "Count"
             }
           }
@@ -1711,8 +1711,8 @@
             "excludeByName": {},
             "indexByName": {},
             "renameByName": {
-              "Percentiles 95 duration_ms": "p95",
-              "Max duration_ms": "max",
+              "p95.0 duration_ms": "p95",
+              "Max": "max",
               "Count": "Count"
             }
           }
@@ -1918,8 +1918,8 @@
             "excludeByName": {},
             "indexByName": {},
             "renameByName": {
-              "Percentiles 95 duration_ms": "p95",
-              "Max duration_ms": "max",
+              "p95.0 duration_ms": "p95",
+              "Max": "max",
               "Count": "Count"
             }
           }
