@@ -74,40 +74,29 @@ public class LogRecord
     public string? SpanId { get; set; }
 
     /// <summary>
-    /// Correlation ID for request tracking.
-    /// </summary>
-    [JsonPropertyName("correlation_id")]
-    public string? CorrelationId { get; set; }
-
-    /// <summary>
-    /// User ID if available.
+    /// User ID (enduser.id), or empty when the record has none.
     /// </summary>
     [JsonPropertyName("user_id")]
     public string? UserId { get; set; }
 
     /// <summary>
-    /// Session ID if available.
+    /// Session ID, or empty when the record has none (see OtlpLogsParser for why it is never null).
     /// </summary>
     [JsonPropertyName("session_id")]
     public string? SessionId { get; set; }
 
     /// <summary>
-    /// Request ID for request tracking.
+    /// Operation ID, or empty when the record has none.
     /// </summary>
-    [JsonPropertyName("request_id")]
-    public string? RequestId { get; set; }
+    [JsonPropertyName("operation_id")]
+    public string? OperationId { get; set; }
 
     /// <summary>
-    /// Logger name/class that emitted the log.
+    /// "method" for a business rejection the user was shown, "system" for an unexpected failure.
+    /// Set only on error records.
     /// </summary>
-    [JsonPropertyName("logger_name")]
-    public string? LoggerName { get; set; }
-
-    /// <summary>
-    /// Thread name or ID.
-    /// </summary>
-    [JsonPropertyName("thread_name")]
-    public string? ThreadName { get; set; }
+    [JsonPropertyName("error_kind")]
+    public string? ErrorKind { get; set; }
 
     /// <summary>
     /// Exception information if present.

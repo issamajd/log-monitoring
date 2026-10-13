@@ -142,6 +142,9 @@ public class OtlpTracesParser : ITracesParser
                     case "enduser.id":
                         record.UserName = value.ToString();
                         break;
+                    case "error.kind":
+                        record.ErrorKind = value.ToString();
+                        break;
                     case "bp.name":
                         record.BpName = value.ToString();
                         break;
@@ -221,7 +224,24 @@ public class OtlpTracesParser : ITracesParser
             }
 
             record.Events.Add(eventRecord);
+
+            if (record.Exception == null && spanEvent.Name == "exception")
+            {
+                record.Exception = new SpanException
+                {
+                    Type = eventRecord.Attributes.GetValueOrDefault("exception.type")?.ToString(),
+                    Message = eventRecord.Attributes.GetValueOrDefault("exception.message")?.ToString(),
+                    Stacktrace = eventRecord.Attributes.GetValueOrDefault("exception.stacktrace")?.ToString()
+                };
+            }
         }
+
+        // Dashboards filter correlation IDs with `field:*$var*`, which matches an empty string but
+        // not a missing field. Writing "" keeps spans without a session or user (a failed login, a
+        // scheduler job) visible while the filter box is empty.
+        record.SessionId ??= string.Empty;
+        record.OperationId ??= string.Empty;
+        record.UserName ??= string.Empty;
 
         return record;
     }

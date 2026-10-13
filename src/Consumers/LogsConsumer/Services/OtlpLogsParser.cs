@@ -131,32 +131,21 @@ public class OtlpLogsParser : ILogsParser
             {
                 record.Attributes[attr.Key] = value;
 
-                // Extract known attributes
+                // Extract known attributes: the names rndfwcore's log bridge emits
+                // (server/server.logging/otel/OtelLogBridge.cs).
                 switch (attr.Key)
                 {
-                    case "correlation.id":
-                    case "CorrelationId":
-                        record.CorrelationId = value.ToString();
-                        break;
-                    case "user.id":
-                    case "UserId":
+                    case "enduser.id":
                         record.UserId = value.ToString();
                         break;
+                    case "operation.id":
+                        record.OperationId = value.ToString();
+                        break;
+                    case "error.kind":
+                        record.ErrorKind = value.ToString();
+                        break;
                     case "session.id":
-                    case "SessionId":
                         record.SessionId = value.ToString();
-                        break;
-                    case "request.id":
-                    case "RequestId":
-                        record.RequestId = value.ToString();
-                        break;
-                    case "logger.name":
-                    case "LoggerName":
-                        record.LoggerName = value.ToString();
-                        break;
-                    case "thread.name":
-                    case "ThreadName":
-                        record.ThreadName = value.ToString();
                         break;
                     case "exception.type":
                         record.Exception ??= new ExceptionInfo();
@@ -173,6 +162,14 @@ public class OtlpLogsParser : ILogsParser
                 }
             }
         }
+
+        // Dashboards filter correlation IDs with `field:*$var*`, which matches an empty string but
+        // not a missing field. Writing "" keeps records emitted outside a session or span visible
+        // while the filter box is empty.
+        record.SessionId ??= string.Empty;
+        record.OperationId ??= string.Empty;
+        record.UserId ??= string.Empty;
+        record.TraceId ??= string.Empty;
 
         return record;
     }

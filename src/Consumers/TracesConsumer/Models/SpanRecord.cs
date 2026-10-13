@@ -98,13 +98,13 @@ public class SpanRecord
     public string? Environment { get; set; }
 
     /// <summary>
-    /// Session ID if available.
+    /// Session ID, or empty when the span has none (see OtlpTracesParser for why it is never null).
     /// </summary>
     [JsonPropertyName("session_id")]
     public string? SessionId { get; set; }
 
     /// <summary>
-    /// Operation ID if available.
+    /// Operation ID, or empty when the span has none.
     /// </summary>
     [JsonPropertyName("operation_id")]
     public string? OperationId { get; set; }
@@ -116,10 +116,24 @@ public class SpanRecord
     public string? ClientRequestTranId { get; set; }
 
     /// <summary>
-    /// End user name if available.
+    /// End user name, or empty when the span has none. On a failed login it is the attempted name.
     /// </summary>
     [JsonPropertyName("user_name")]
     public string? UserName { get; set; }
+
+    /// <summary>
+    /// "method" for a business rejection the user was shown, "system" for an unexpected failure.
+    /// Set only on failed spans.
+    /// </summary>
+    [JsonPropertyName("error_kind")]
+    public string? ErrorKind { get; set; }
+
+    /// <summary>
+    /// The span's first "exception" event, promoted so dashboards can show and filter it.
+    /// Same shape as the logs index's exception object.
+    /// </summary>
+    [JsonPropertyName("exception")]
+    public SpanException? Exception { get; set; }
 
     /// <summary>
     /// Business process name if available.
@@ -252,6 +266,21 @@ public class SpanRecord
     /// </summary>
     [JsonPropertyName("resource")]
     public Dictionary<string, object> Resource { get; set; } = new();
+}
+
+/// <summary>
+/// Exception details promoted from a span's "exception" event.
+/// </summary>
+public class SpanException
+{
+    [JsonPropertyName("type")]
+    public string? Type { get; set; }
+
+    [JsonPropertyName("message")]
+    public string? Message { get; set; }
+
+    [JsonPropertyName("stacktrace")]
+    public string? Stacktrace { get; set; }
 }
 
 /// <summary>

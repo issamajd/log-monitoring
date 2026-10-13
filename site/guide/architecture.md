@@ -82,7 +82,7 @@ End-to-end checks for everything below are scripted in the [verification runbook
 
 | Component | What we have now | What needs to be done |
 |---|---|---|
-| OpenTelemetry in the app | **`rndfwcore` chokepoints are instrumented** on its `log-monitoring` branch (API, jobs, BP, DQ, SQL spans + metrics, OTLP log bridge, session/user attributes) | Merge the branch; verify OTel exporter DLLs reach deployed host bin folders; instrument the standalone `service/` hosts if in scope |
+| OpenTelemetry in the app | **`rndfwcore` chokepoints are instrumented** on its `log-monitoring` branch (API, jobs, BP, DQ, SQL spans + metrics, OTLP log bridge, session/user attributes, method/system error kind with exception details) | Merge the branch; confirm the CI dispatch carries the hosts' OTel/Grpc/Protobuf DLLs (verified by hand on 2026-10-12); instrument the standalone `service/` hosts if in scope |
 | .NET / process metrics | `AddRuntimeInstrumentation()` + `AddProcessInstrumentation()` enabled in the `server.service` host bootstrap | Nothing — keep Telegraf CLR counters removed |
 | Host metrics | Collector `hostmetrics` receiver removed; containerized Telegraf removed; native Windows config at `deploy/telegraf-windows/` | Install Telegraf as a Windows service on each host; fill in the real FWCORE service names in `win_services` |
 | Collector → Kafka routing | Collector publishes to per-signal Kafka topics; `telemetry-traces` is created with 12 partitions | Nothing for Milestone 1 |

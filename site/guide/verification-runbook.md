@@ -29,7 +29,7 @@ Commands are written for **PowerShell on Windows** (`curl.exe`, `docker compose`
 | 5601 | Kibana |
 
 ::: info Consumers are not in the solution file
-`LogMonitoring.sln` holds only Instrumentation, SampleApp, SystemTraceParser, OtlpProto, and tests — the consumers are compiled transitively as project references of `OtlpJsonParserTests`, so a solution build does catch breakage in them. Build and run the consumers via Compose, or individually with `dotnet run --project src/Consumers/LogsConsumer` — but read [gotcha: Kafka from the host is port 9093](#kafka-from-the-host-is-port-9093-not-9092) first.
+`LogMonitoring.sln` holds only SystemTraceParser, OtlpProto, and the unit tests — the consumers are compiled transitively as project references of `OtlpJsonParserTests`, so a solution build does catch breakage in them. Build and run the consumers via Compose, or individually with `dotnet run --project src/Consumers/LogsConsumer` — but read [gotcha: Kafka from the host is port 9093](#kafka-from-the-host-is-port-9093-not-9092) first.
 :::
 
 ## Stage 1 — bring the stack up

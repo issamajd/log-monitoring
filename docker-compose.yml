@@ -226,12 +226,8 @@ services:
                   "environment": { "type": "keyword" },
                   "trace_id": { "type": "keyword" },
                   "span_id": { "type": "keyword" },
-                  "correlation_id": { "type": "keyword" },
                   "user_id": { "type": "keyword" },
                   "session_id": { "type": "keyword" },
-                  "request_id": { "type": "keyword" },
-                  "logger_name": { "type": "keyword" },
-                  "thread_name": { "type": "keyword" },
                   "exception": {
                     "properties": {
                       "type": { "type": "keyword" },

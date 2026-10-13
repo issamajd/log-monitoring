@@ -253,7 +253,7 @@ flowchart LR
   <li><strong>Correct altitude.</strong> The plan shrinks the next step while keeping the north star — the roadmap literally says so.</li>
   <li><strong>Concrete success criteria &amp; thresholds</strong> (API &gt;3s warn / &gt;10s crit; SQL &gt;1s / &gt;5s), so “done” is testable.</li>
   <li><strong>Deployment realism.</strong> Same-server vs dedicated profiles, online vs offline install, disk-sizing formula — this is on-prem reality, not slideware.</li>
-  <li><strong>Instrumentation is live.</strong> The OTel helper library (traces, metrics, logs, correlation middleware) is wired into <code>rndfwcore</code> and the full pipeline was verified end-to-end against a real deployment; the SystemTrace parser stays parked in the repo as a fallback.</li>
+  <li><strong>Instrumentation is live.</strong> <code>rndfwcore</code> is instrumented directly on its <code>log-monitoring</code> branch (traces, metrics, a log bridge) and the full pipeline was verified end-to-end against a real deployment; the SystemTrace parser stays parked in the repo as a fallback.</li>
 </ul>
 
 <h3>Risks &amp; gaps</h3>

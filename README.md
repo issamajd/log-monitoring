@@ -33,9 +33,9 @@ The plan is a VitePress site; sources are in [`site/guide/`](site/guide/).
 
 - `site/` - current planning source of truth (VitePress docs site)
 - `docker/` - monitoring stack configuration and provisioning
-- `src/Instrumentation/` - .NET OpenTelemetry helper library
-- `src/Consumers/` - Kafka consumers writing logs to Elasticsearch and metrics to TimescaleDB (Milestone 1 base)
+- `src/Consumers/` - Kafka consumers writing logs and traces to Elasticsearch and metrics to TimescaleDB (Milestone 1 base)
+- `src/OtlpProto/` - vendored OTLP protos the consumers deserialize into
 - `src/SystemTraceParser/` - parked pipe-delimited log parser; kept unwired as a fallback
-- `tests/` - component tests and sample outputs
+- `tests/` - unit tests for the OTLP JSON parsers and the parked SystemTrace parser
 
 Treat the current `site/` milestone pages as authoritative when deciding what to keep, simplify, or defer.

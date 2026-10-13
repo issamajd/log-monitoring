@@ -107,7 +107,7 @@
             "uid": "es-logs"
           },
           "refId": "A",
-          "query": "level:(ERROR OR FATAL) AND environment:$env AND service_name:$service AND (host_name:$host OR (NOT _exists_:host_name)) AND message:*$search* AND session_id:*$session_id* AND trace_id:*$trace_id*",
+          "query": "level:(ERROR OR FATAL) AND environment:$env AND service_name:$service AND (host_name:$host OR (NOT _exists_:host_name)) AND message:*$search* AND session_id:*$session_id* AND trace_id:*$trace_id* AND user_id:*$user*",
           "alias": "",
           "metrics": [
             {
@@ -188,7 +188,7 @@
             "uid": "es-logs"
           },
           "refId": "A",
-          "query": "level:FATAL AND environment:$env AND service_name:$service AND (host_name:$host OR (NOT _exists_:host_name)) AND message:*$search* AND session_id:*$session_id* AND trace_id:*$trace_id*",
+          "query": "level:FATAL AND environment:$env AND service_name:$service AND (host_name:$host OR (NOT _exists_:host_name)) AND message:*$search* AND session_id:*$session_id* AND trace_id:*$trace_id* AND user_id:*$user*",
           "alias": "",
           "metrics": [
             {
@@ -273,7 +273,7 @@
             "uid": "es-traces"
           },
           "refId": "A",
-          "query": "error:true AND environment:$env AND service_name:$service AND (host_name:$host OR (NOT _exists_:host_name)) AND session_id:*$session_id* AND operation_id:*$operation_id* AND trace_id:*$trace_id*",
+          "query": "error:true AND environment:$env AND service_name:$service AND (host_name:$host OR (NOT _exists_:host_name)) AND session_id:*$session_id* AND operation_id:*$operation_id* AND trace_id:*$trace_id* AND user_name:*$user*",
           "alias": "",
           "metrics": [
             {
@@ -350,7 +350,7 @@
             "uid": "es-logs"
           },
           "refId": "A",
-          "query": "level:(ERROR OR FATAL) AND environment:$env AND service_name:$service AND (host_name:$host OR (NOT _exists_:host_name)) AND level:(${level:lucene}) AND message:*$search* AND session_id:*$session_id* AND trace_id:*$trace_id*",
+          "query": "level:(ERROR OR FATAL) AND environment:$env AND service_name:$service AND (host_name:$host OR (NOT _exists_:host_name)) AND level:(${level:lucene}) AND message:*$search* AND session_id:*$session_id* AND trace_id:*$trace_id* AND user_id:*$user* AND NOT session_id:\"\"",
           "alias": "",
           "metrics": [
             {
@@ -472,7 +472,7 @@
             "uid": "es-logs"
           },
           "refId": "A",
-          "query": "environment:$env AND service_name:$service AND (host_name:$host OR (NOT _exists_:host_name)) AND level:(${level:lucene}) AND message:*$search* AND session_id:*$session_id* AND trace_id:*$trace_id*",
+          "query": "environment:$env AND service_name:$service AND (host_name:$host OR (NOT _exists_:host_name)) AND level:(${level:lucene}) AND message:*$search* AND session_id:*$session_id* AND trace_id:*$trace_id* AND user_id:*$user*",
           "alias": "",
           "metrics": [
             {
@@ -591,7 +591,7 @@
             "uid": "es-traces"
           },
           "refId": "A",
-          "query": "error:true AND environment:$env AND service_name:$service AND (host_name:$host OR (NOT _exists_:host_name)) AND session_id:*$session_id* AND operation_id:*$operation_id* AND trace_id:*$trace_id*",
+          "query": "error:true AND environment:$env AND service_name:$service AND (host_name:$host OR (NOT _exists_:host_name)) AND session_id:*$session_id* AND operation_id:*$operation_id* AND trace_id:*$trace_id* AND user_name:*$user*",
           "alias": "",
           "metrics": [
             {
@@ -656,6 +656,230 @@
       "panels": [],
       "title": "Error Log Search",
       "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "elasticsearch",
+        "uid": "es-logs"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false,
+            "filterable": true
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "trace_id"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Open trace",
+                    "url": "/d/triage-error-search/triage-error-search?var-trace_id=${__value.raw}&${__url_time_range}",
+                    "targetBlank": true
+                  },
+                  {
+                    "title": "Explore traces",
+                    "url": "/explore?left=%7B%22datasource%22:%22es-traces%22,%22queries%22:%5B%7B%22query%22:%22trace_id:${__value.raw}%22%7D%5D%7D",
+                    "targetBlank": true
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "session_id"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Filter by session",
+                    "url": "/d/triage-error-search/triage-error-search?var-session_id=${__value.raw}&${__url_time_range}",
+                    "targetBlank": false
+                  },
+                  {
+                    "title": "Session context (app DB)",
+                    "url": "/d/session-lookup/session-lookup?var-session_id=${__value.raw}",
+                    "targetBlank": true
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "error_kind"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "system": {
+                        "color": "red",
+                        "index": 0,
+                        "text": "system"
+                      },
+                      "method": {
+                        "color": "orange",
+                        "index": 1,
+                        "text": "method"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background",
+                  "mode": "basic"
+                }
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.width",
+                "value": 90
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "exception.message"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 420
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 15
+      },
+      "id": 13,
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false,
+          "reducer": [
+            "sum"
+          ],
+          "countRows": false,
+          "fields": ""
+        },
+        "pagination": {
+          "enabled": true
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "elasticsearch",
+            "uid": "es-logs"
+          },
+          "refId": "A",
+          "query": "level:ERROR AND _exists_:error_kind AND environment:$env AND service_name:$service AND (host_name:$host OR (NOT _exists_:host_name)) AND message:*$search* AND session_id:*$session_id* AND trace_id:*$trace_id* AND user_id:*$user*",
+          "alias": "",
+          "metrics": [
+            {
+              "id": "1",
+              "type": "raw_data",
+              "settings": {
+                "size": "500",
+                "order": "desc",
+                "useTimeRange": true
+              }
+            }
+          ],
+          "bucketAggs": [],
+          "timeField": "@timestamp"
+        }
+      ],
+      "title": "Failures (one row per error)",
+      "type": "table",
+      "transformations": [
+        {
+          "id": "filterFieldsByName",
+          "options": {
+            "include": {
+              "names": [
+                "@timestamp",
+                "error_kind",
+                "user_id",
+                "attributes.bp.name",
+                "exception.type",
+                "exception.message",
+                "session_id",
+                "trace_id"
+              ]
+            }
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "renameByName": {
+              "attributes.bp.name": "bp",
+              "user_id": "user"
+            },
+            "indexByName": {
+              "@timestamp": 0,
+              "error_kind": 1,
+              "user_id": 2,
+              "attributes.bp.name": 3,
+              "exception.type": 4,
+              "exception.message": 5,
+              "session_id": 6,
+              "trace_id": 7
+            }
+          }
+        }
+      ],
+      "description": "One row per failure the application recorded. error_kind \"method\" is a business rejection the user saw as a message; \"system\" is an unexpected failure (the stack is in the trace and in the log record). Click trace_id to open every span of that request."
     },
     {
       "datasource": {
@@ -806,7 +1030,7 @@
         "h": 10,
         "w": 24,
         "x": 0,
-        "y": 15
+        "y": 24
       },
       "id": 10,
       "options": {
@@ -831,7 +1055,7 @@
             "uid": "es-logs"
           },
           "refId": "A",
-          "query": "environment:$env AND service_name:$service AND (host_name:$host OR (NOT _exists_:host_name)) AND level:(${level:lucene}) AND message:*$search* AND session_id:*$session_id* AND trace_id:*$trace_id*",
+          "query": "environment:$env AND service_name:$service AND (host_name:$host OR (NOT _exists_:host_name)) AND level:(${level:lucene}) AND message:*$search* AND session_id:*$session_id* AND trace_id:*$trace_id* AND user_id:*$user*",
           "alias": "",
           "metrics": [
             {
@@ -860,13 +1084,12 @@
               "level": 1,
               "service_name": 2,
               "host_name": 3,
-              "logger_name": 4,
-              "message": 5,
-              "session_id": 6,
-              "correlation_id": 7,
-              "trace_id": 8,
-              "span_id": 9,
-              "exception.type": 10
+              "message": 4,
+              "session_id": 5,
+              "user_id": 6,
+              "trace_id": 7,
+              "span_id": 8,
+              "exception.type": 9
             },
             "renameByName": {}
           }
@@ -942,7 +1165,7 @@
         "h": 9,
         "w": 12,
         "x": 0,
-        "y": 25
+        "y": 34
       },
       "id": 11,
       "options": {
@@ -967,7 +1190,7 @@
             "uid": "es-logs"
           },
           "refId": "A",
-          "query": "_exists_:exception.type AND environment:$env AND service_name:$service AND (host_name:$host OR (NOT _exists_:host_name)) AND level:(${level:lucene}) AND message:*$search* AND session_id:*$session_id* AND trace_id:*$trace_id*",
+          "query": "_exists_:exception.type AND environment:$env AND service_name:$service AND (host_name:$host OR (NOT _exists_:host_name)) AND level:(${level:lucene}) AND message:*$search* AND session_id:*$session_id* AND trace_id:*$trace_id* AND user_id:*$user*",
           "alias": "",
           "metrics": [
             {
@@ -976,6 +1199,17 @@
             }
           ],
           "bucketAggs": [
+            {
+              "id": "2",
+              "type": "terms",
+              "field": "error_kind",
+              "settings": {
+                "size": "5",
+                "order": "desc",
+                "orderBy": "_count",
+                "min_doc_count": "1"
+              }
+            },
             {
               "id": "3",
               "type": "terms",
@@ -1153,7 +1387,7 @@
         "h": 9,
         "w": 12,
         "x": 12,
-        "y": 25
+        "y": 34
       },
       "id": 12,
       "options": {
@@ -1210,13 +1444,17 @@
               "kind": 3,
               "status_code": 4,
               "error": 5,
-              "bp_name": 6,
-              "dq_name": 7,
-              "db_operation": 8,
-              "job_name": 9,
-              "db_statement": 10,
-              "sql_danger_flags": 11,
-              "service_name": 12
+              "bp_name": 10,
+              "dq_name": 11,
+              "db_operation": 12,
+              "job_name": 13,
+              "db_statement": 14,
+              "sql_danger_flags": 15,
+              "service_name": 16,
+              "user_name": 6,
+              "error_kind": 7,
+              "exception.type": 8,
+              "exception.message": 9
             },
             "renameByName": {}
           }
@@ -1387,6 +1625,26 @@
       {
         "name": "session_id",
         "label": "Session ID",
+        "type": "textbox",
+        "query": "",
+        "current": {
+          "selected": false,
+          "text": "",
+          "value": ""
+        },
+        "options": [
+          {
+            "text": "",
+            "value": "",
+            "selected": true
+          }
+        ],
+        "hide": 0,
+        "skipUrlSync": false
+      },
+      {
+        "name": "user",
+        "label": "User",
         "type": "textbox",
         "query": "",
         "current": {

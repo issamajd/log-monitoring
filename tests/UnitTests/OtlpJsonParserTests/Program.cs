@@ -27,7 +27,8 @@ internal static class Program
             ("Parse OTLP JSON logs", ParseOtlpJsonLogs),
             ("Parse OTLP JSON metrics", ParseOtlpJsonMetrics),
             ("Parse OTLP JSON traces", ParseOtlpJsonTraces),
-            ("Collector hex trace/span IDs survive parsing", ParseCollectorHexIds)
+            ("Collector hex trace/span IDs survive parsing", ParseCollectorHexIds),
+            ("Failure details are promoted for search", ParseFailureDetails)
         };
 
         foreach (var (name, test) in tests)
@@ -273,9 +274,97 @@ internal static class Program
             new OtlpLogsParser(NullLogger<OtlpLogsParser>.Instance)
                 .Parse(Encoding.UTF8.GetBytes(noIdsJson));
 
+        // No correlation must not become hex. The trace ID is stored as "" (not null) so the
+        // dashboards' `trace_id:*$trace_id*` filter still matches the record; the span ID has no filter.
         AssertEqual(1, uncorrelated.Count, "Uncorrelated log count");
-        AssertEqual(null, uncorrelated[0].TraceId, "Uncorrelated trace ID");
+        AssertEqual("", uncorrelated[0].TraceId, "Uncorrelated trace ID");
         AssertEqual(null, uncorrelated[0].SpanId, "Uncorrelated span ID");
+        AssertEqual("", uncorrelated[0].SessionId, "Uncorrelated session ID");
+    }
+
+    /// <summary>
+    /// A failure must reach Elasticsearch searchable: the span's exception event and error.kind
+    /// promoted to top-level fields, the attempted user name kept on a session-less failed login,
+    /// and the log side mapping enduser.id/error.kind the same way.
+    /// </summary>
+    private static void ParseFailureDetails()
+    {
+        Span failedLogin = new Span
+        {
+            TraceId = ByteString.CopyFrom(Enumerable.Range(1, 16).Select(value => (byte)value).ToArray()),
+            SpanId = ByteString.CopyFrom(Enumerable.Range(17, 8).Select(value => (byte)value).ToArray()),
+            Name = "command Login",
+            StartTimeUnixNano = TimestampNanoseconds,
+            EndTimeUnixNano = TimestampNanoseconds + 1_000_000,
+            Status = new Status { Code = Status.Types.StatusCode.Error, Message = "Invalid Credentials" },
+            Attributes = { Attribute("enduser.id", "support.test"), Attribute("error.kind", "method") }
+        };
+        failedLogin.Events.Add(new Span.Types.Event
+        {
+            Name = "exception",
+            TimeUnixNano = TimestampNanoseconds,
+            Attributes =
+            {
+                Attribute("exception.type", "common.infrastructure.exceptions.MethodException"),
+                Attribute("exception.message", "Invalid Credentials")
+            }
+        });
+
+        ExportTraceServiceRequest traces = new ExportTraceServiceRequest
+        {
+            ResourceSpans = { new ResourceSpans { Resource = CreateResource(), ScopeSpans = { new ScopeSpans { Spans = { failedLogin } } } } }
+        };
+
+        List<Consumers.Traces.Models.SpanRecord> spans =
+            new OtlpTracesParser(NullLogger<OtlpTracesParser>.Instance).Parse(ToJsonBytes(traces));
+
+        AssertEqual(true, spans[0].Error, "Failed span error flag");
+        AssertEqual("method", spans[0].ErrorKind, "Span error kind");
+        AssertEqual("common.infrastructure.exceptions.MethodException", spans[0].Exception?.Type, "Span exception type");
+        AssertEqual("Invalid Credentials", spans[0].Exception?.Message, "Span exception message");
+        AssertEqual("support.test", spans[0].UserName, "Attempted user name");
+        AssertEqual("", spans[0].SessionId, "Session-less span session ID");
+
+        ExportLogsServiceRequest logs = new ExportLogsServiceRequest
+        {
+            ResourceLogs =
+            {
+                new ResourceLogs
+                {
+                    Resource = CreateResource(),
+                    ScopeLogs =
+                    {
+                        new ScopeLogs
+                        {
+                            LogRecords =
+                            {
+                                new OtlpLogRecord
+                                {
+                                    TimeUnixNano = TimestampNanoseconds,
+                                    SeverityNumber = SeverityNumber.Error,
+                                    Body = StringValue("NullReferenceException: Object reference not set"),
+                                    Attributes =
+                                    {
+                                        Attribute("enduser.id", "admin"),
+                                        Attribute("operation.id", "op-7"),
+                                        Attribute("error.kind", "system"),
+                                        Attribute("exception.type", "System.NullReferenceException")
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        };
+
+        List<Consumers.Logs.Models.LogRecord> records =
+            new OtlpLogsParser(NullLogger<OtlpLogsParser>.Instance).Parse(ToJsonBytes(logs));
+
+        AssertEqual("admin", records[0].UserId, "Log user from enduser.id");
+        AssertEqual("op-7", records[0].OperationId, "Log operation ID");
+        AssertEqual("system", records[0].ErrorKind, "Log error kind");
+        AssertEqual("System.NullReferenceException", records[0].Exception?.Type, "Log exception type");
     }
 
     private static Resource CreateResource()
