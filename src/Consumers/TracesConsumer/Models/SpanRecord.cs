@@ -143,6 +143,12 @@ public class SpanRecord
     public SpanException? Exception { get; set; }
 
     /// <summary>
+    /// What an api.request ran ("BPName.Method", or the command name), if available.
+    /// </summary>
+    [JsonPropertyName("api_operation")]
+    public string? ApiOperation { get; set; }
+
+    /// <summary>
     /// Business process name if available.
     /// </summary>
     [JsonPropertyName("bp_name")]
@@ -198,7 +204,9 @@ public class SpanRecord
 
     /// <summary>
     /// Hash of the normalized statement, the same for every execution of one statement shape.
-    /// Set only when db_statement is. Dashboards group slow SQL by it.
+    /// Set only when db_statement is. Dashboards group slow SQL by it. rndfwcore sends it as
+    /// rndfw.sql.fingerprint, hashed before db.statement's 4096-character cut; the consumer
+    /// computes it from db_statement only when the app did not.
     /// </summary>
     [JsonPropertyName("sql_fingerprint")]
     public string? SqlFingerprint { get; set; }

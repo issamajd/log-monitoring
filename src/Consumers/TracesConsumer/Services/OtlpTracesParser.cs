@@ -175,6 +175,12 @@ public class OtlpTracesParser : ITracesParser
                     case "rndfw.sql.danger_flags":
                         record.SqlDangerFlags = value.ToString();
                         break;
+                    case "rndfw.sql.fingerprint":
+                        record.SqlFingerprint = value.ToString();
+                        break;
+                    case "rndfw.api.operation":
+                        record.ApiOperation = value.ToString();
+                        break;
                     case "rndfw.sql.id":
                         record.SqlId = value.ToString();
                         break;
@@ -249,7 +255,7 @@ public class OtlpTracesParser : ITracesParser
         if (!string.IsNullOrWhiteSpace(record.DbStatement))
         {
             string statement = WhitespaceRun.Replace(record.DbStatement.Trim(), " ");
-            record.SqlFingerprint = FingerprintStatement(statement);
+            record.SqlFingerprint ??= FingerprintStatement(statement);
             record.DbStatementPreview = PreviewStatement(statement);
         }
 
@@ -263,6 +269,7 @@ public class OtlpTracesParser : ITracesParser
     /// <summary>
     /// First 16 hex characters of the statement's SHA-256. rndfwcore masks literals before
     /// emitting db.statement, so every execution of one statement shape hashes the same.
+    /// Matches rndfwcore's own rndfw.sql.fingerprint for statements under its 4096-character cut.
     /// </summary>
     private static string FingerprintStatement(string normalizedStatement)
     {

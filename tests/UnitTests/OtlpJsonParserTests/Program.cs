@@ -233,13 +233,22 @@ internal static class Program
                                 SqlSpan(1, Statement),
                                 SqlSpan(2, "  " + Statement.Replace(" FROM ", "\r\n  FROM ") + "\n"),
                                 SqlSpan(3, Statement.Replace("SYSTEMFLAGS", "USERS")),
-                                SqlSpan(4, null)
+                                SqlSpan(4, null),
+                                AppFingerprintedSpan()
                             }
                         }
                     }
                 }
             }
         };
+
+        // rndfwcore hashes the statement before its 4096-character cut; its value wins.
+        Span AppFingerprintedSpan()
+        {
+            Span span = SqlSpan(5, Statement);
+            span.Attributes.Add(Attribute("rndfw.sql.fingerprint", "0123456789abcdef"));
+            return span;
+        }
 
         OtlpTracesParser parser = new OtlpTracesParser(NullLogger<OtlpTracesParser>.Instance);
         List<SpanRecord> records = parser.Parse(ToJsonBytes(request));
@@ -249,6 +258,7 @@ internal static class Program
         AssertEqual(false, records[0].SqlFingerprint == records[2].SqlFingerprint, "Different statements differ");
         AssertEqual("SELECT … FROM SYSTEMFLAGS S WHERE (S.NAME = @fp1e)", records[0].DbStatementPreview, "Statement preview");
         AssertEqual(null, records[3].SqlFingerprint, "No fingerprint without a statement");
+        AssertEqual("0123456789abcdef", records[4].SqlFingerprint, "App fingerprint is kept");
     }
 
     /// <summary>

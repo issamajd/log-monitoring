@@ -1695,7 +1695,7 @@
             {
               "id": "4",
               "type": "terms",
-              "field": "name",
+              "field": "api_operation",
               "settings": {
                 "size": "20",
                 "order": "desc",
@@ -1718,11 +1718,13 @@
             "renameByName": {
               "p95.0 duration_ms": "p95",
               "Max": "max",
-              "Count": "Count"
+              "Count": "Count",
+              "api_operation": "operation"
             }
           }
         }
-      ]
+      ],
+      "description": "Client requests grouped by what they ran: BPName.Method for a BP call, otherwise the command name (Login, GetValueLists, ...). Requests from an rndfwcore build without rndfw.api.operation are not listed."
     },
     {
       "datasource": {
