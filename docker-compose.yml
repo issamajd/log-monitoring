@@ -302,6 +302,7 @@ services:
                   "trace_id": { "type": "keyword" },
                   "span_id": { "type": "keyword" },
                   "parent_span_id": { "type": "keyword" },
+                  "start_time_us": { "type": "long" },
                   "kind": { "type": "keyword" },
                   "status_code": { "type": "keyword" },
                   "service_name": { "type": "keyword" },

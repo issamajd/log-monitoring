@@ -20,6 +20,13 @@ public class SpanRecord
     public DateTimeOffset EndTimestamp { get; set; }
 
     /// <summary>
+    /// Start time in Unix microseconds. @timestamp keeps only milliseconds, so a parent and
+    /// its children often tie; dashboards sort a trace's spans by this to list callers first.
+    /// </summary>
+    [JsonPropertyName("start_time_us")]
+    public long StartTimeUs { get; set; }
+
+    /// <summary>
     /// Span duration in milliseconds.
     /// </summary>
     [JsonPropertyName("duration_ms")]

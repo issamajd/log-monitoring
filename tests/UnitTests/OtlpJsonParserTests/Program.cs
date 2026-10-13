@@ -187,6 +187,7 @@ internal static class Program
         AssertEqual("CLIENT", records[0].Kind, "Span kind");
         AssertEqual("OK", records[0].StatusCode, "Span status");
         AssertEqual(2.5, records[0].DurationMs, "Span duration");
+        AssertEqual((long)(TimestampNanoseconds / 1_000), records[0].StartTimeUs, "Span start time (us)");
         AssertEqual("SELECT", records[0].DbOperation, "Span database operation");
         AssertEqual("session-42", records[0].SessionId, "Span session ID");
     }
