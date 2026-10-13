@@ -37,7 +37,9 @@ BEGIN
     -- A valid GUID with no session row must still return a row: Grafana's
     -- table panel only shows its "noValue" text for a result with zero
     -- columns, so an empty resultset would render as a bare header row
-    -- with no explanation.
+    -- with no explanation. (noValue also fills NULL cells, so the panel
+    -- maps NULL to a dash: a found session with an empty field must not
+    -- read as "not found".)
     IF NOT EXISTS (SELECT 1 FROM <<schema>>.CLIENTSESSIONLOG WHERE SESSIONID IN (@lo, @up))
     BEGIN
         SELECT 1 AS Ord, N'Session ID' AS [Field],
