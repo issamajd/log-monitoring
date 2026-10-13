@@ -66,7 +66,44 @@
           },
           "unit": "ms"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "p95.0 duration_ms"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "${__data.fields.service_name} p95"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "p99.0 duration_ms"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "${__data.fields.service_name} p99"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Max"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "${__data.fields.service_name} max"
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 6,
@@ -80,7 +117,7 @@
         "orientation": "horizontal",
         "reduceOptions": {
           "calcs": [
-            "max"
+            "lastNotNull"
           ],
           "fields": "",
           "values": true
@@ -104,7 +141,6 @@
               "field": "duration_ms",
               "settings": {
                 "percents": [
-                  "50",
                   "95",
                   "99"
                 ]
@@ -119,11 +155,13 @@
           "bucketAggs": [
             {
               "id": "3",
-              "type": "date_histogram",
-              "field": "@timestamp",
+              "type": "terms",
+              "field": "service_name",
               "settings": {
-                "interval": "auto",
-                "min_doc_count": "0"
+                "size": "10",
+                "order": "desc",
+                "orderBy": "_count",
+                "min_doc_count": "1"
               }
             }
           ],
@@ -131,7 +169,8 @@
         }
       ],
       "title": "API p95 / p99 / max",
-      "type": "bargauge"
+      "type": "bargauge",
+      "description": "p95, p99 and max duration over the whole time range, one set of bars per service."
     },
     {
       "datasource": {
@@ -163,7 +202,44 @@
           },
           "unit": "ms"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "p95.0 duration_ms"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "${__data.fields.service_name} p95"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "p99.0 duration_ms"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "${__data.fields.service_name} p99"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Max"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "${__data.fields.service_name} max"
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 6,
@@ -177,7 +253,7 @@
         "orientation": "horizontal",
         "reduceOptions": {
           "calcs": [
-            "max"
+            "lastNotNull"
           ],
           "fields": "",
           "values": true
@@ -201,7 +277,6 @@
               "field": "duration_ms",
               "settings": {
                 "percents": [
-                  "50",
                   "95",
                   "99"
                 ]
@@ -216,11 +291,13 @@
           "bucketAggs": [
             {
               "id": "3",
-              "type": "date_histogram",
-              "field": "@timestamp",
+              "type": "terms",
+              "field": "service_name",
               "settings": {
-                "interval": "auto",
-                "min_doc_count": "0"
+                "size": "10",
+                "order": "desc",
+                "orderBy": "_count",
+                "min_doc_count": "1"
               }
             }
           ],
@@ -228,7 +305,8 @@
         }
       ],
       "title": "BP p95 / p99 / max",
-      "type": "bargauge"
+      "type": "bargauge",
+      "description": "p95, p99 and max duration over the whole time range, one set of bars per service."
     },
     {
       "datasource": {
@@ -260,7 +338,44 @@
           },
           "unit": "ms"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "p95.0 duration_ms"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "${__data.fields.service_name} p95"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "p99.0 duration_ms"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "${__data.fields.service_name} p99"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Max"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "${__data.fields.service_name} max"
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 6,
@@ -274,7 +389,7 @@
         "orientation": "horizontal",
         "reduceOptions": {
           "calcs": [
-            "max"
+            "lastNotNull"
           ],
           "fields": "",
           "values": true
@@ -298,7 +413,6 @@
               "field": "duration_ms",
               "settings": {
                 "percents": [
-                  "50",
                   "95",
                   "99"
                 ]
@@ -313,11 +427,13 @@
           "bucketAggs": [
             {
               "id": "3",
-              "type": "date_histogram",
-              "field": "@timestamp",
+              "type": "terms",
+              "field": "service_name",
               "settings": {
-                "interval": "auto",
-                "min_doc_count": "0"
+                "size": "10",
+                "order": "desc",
+                "orderBy": "_count",
+                "min_doc_count": "1"
               }
             }
           ],
@@ -325,7 +441,8 @@
         }
       ],
       "title": "DQ p95 / p99 / max",
-      "type": "bargauge"
+      "type": "bargauge",
+      "description": "p95, p99 and max duration over the whole time range, one set of bars per service."
     },
     {
       "datasource": {
@@ -357,7 +474,44 @@
           },
           "unit": "ms"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "p95.0 duration_ms"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "${__data.fields.service_name} p95"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "p99.0 duration_ms"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "${__data.fields.service_name} p99"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Max"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "${__data.fields.service_name} max"
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 6,
@@ -371,7 +525,7 @@
         "orientation": "horizontal",
         "reduceOptions": {
           "calcs": [
-            "max"
+            "lastNotNull"
           ],
           "fields": "",
           "values": true
@@ -395,7 +549,6 @@
               "field": "duration_ms",
               "settings": {
                 "percents": [
-                  "50",
                   "95",
                   "99"
                 ]
@@ -410,11 +563,13 @@
           "bucketAggs": [
             {
               "id": "3",
-              "type": "date_histogram",
-              "field": "@timestamp",
+              "type": "terms",
+              "field": "service_name",
               "settings": {
-                "interval": "auto",
-                "min_doc_count": "0"
+                "size": "10",
+                "order": "desc",
+                "orderBy": "_count",
+                "min_doc_count": "1"
               }
             }
           ],
@@ -422,7 +577,8 @@
         }
       ],
       "title": "SQL p95 / p99 / max",
-      "type": "bargauge"
+      "type": "bargauge",
+      "description": "p95, p99 and max duration over the whole time range, one set of bars per service."
     },
     {
       "datasource": {
@@ -454,7 +610,44 @@
           },
           "unit": "ms"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "p95.0 duration_ms"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "${__data.fields.service_name} p95"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "p99.0 duration_ms"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "${__data.fields.service_name} p99"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Max"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "${__data.fields.service_name} max"
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 6,
@@ -468,7 +661,7 @@
         "orientation": "horizontal",
         "reduceOptions": {
           "calcs": [
-            "max"
+            "lastNotNull"
           ],
           "fields": "",
           "values": true
@@ -492,7 +685,6 @@
               "field": "duration_ms",
               "settings": {
                 "percents": [
-                  "50",
                   "95",
                   "99"
                 ]
@@ -507,11 +699,13 @@
           "bucketAggs": [
             {
               "id": "3",
-              "type": "date_histogram",
-              "field": "@timestamp",
+              "type": "terms",
+              "field": "service_name",
               "settings": {
-                "interval": "auto",
-                "min_doc_count": "0"
+                "size": "10",
+                "order": "desc",
+                "orderBy": "_count",
+                "min_doc_count": "1"
               }
             }
           ],
@@ -519,7 +713,8 @@
         }
       ],
       "title": "Job p95 / p99 / max",
-      "type": "bargauge"
+      "type": "bargauge",
+      "description": "p95, p99 and max duration over the whole time range, one set of bars per service."
     },
     {
       "collapsed": false,
@@ -558,14 +753,14 @@
               "tooltip": false,
               "viz": false
             },
-            "lineInterpolation": "smooth",
+            "lineInterpolation": "linear",
             "lineWidth": 2,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
             },
-            "showPoints": "never",
-            "spanNulls": true,
+            "showPoints": "auto",
+            "spanNulls": 300000,
             "stacking": {
               "group": "A",
               "mode": "none"
@@ -656,7 +851,17 @@
         }
       ],
       "title": "API latency (p50/p95/p99)",
-      "type": "timeseries"
+      "type": "timeseries",
+      "interval": "1m",
+      "transformations": [
+        {
+          "id": "renameByRegex",
+          "options": {
+            "regex": "^(.*?)p(\\d+)\\.0 duration_ms$",
+            "renamePattern": "$1p$2"
+          }
+        }
+      ]
     },
     {
       "datasource": {
@@ -682,14 +887,14 @@
               "tooltip": false,
               "viz": false
             },
-            "lineInterpolation": "smooth",
+            "lineInterpolation": "linear",
             "lineWidth": 2,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
             },
-            "showPoints": "never",
-            "spanNulls": true,
+            "showPoints": "auto",
+            "spanNulls": 300000,
             "stacking": {
               "group": "A",
               "mode": "none"
@@ -780,7 +985,17 @@
         }
       ],
       "title": "BP latency (p50/p95/p99)",
-      "type": "timeseries"
+      "type": "timeseries",
+      "interval": "1m",
+      "transformations": [
+        {
+          "id": "renameByRegex",
+          "options": {
+            "regex": "^(.*?)p(\\d+)\\.0 duration_ms$",
+            "renamePattern": "$1p$2"
+          }
+        }
+      ]
     },
     {
       "datasource": {
@@ -806,14 +1021,14 @@
               "tooltip": false,
               "viz": false
             },
-            "lineInterpolation": "smooth",
+            "lineInterpolation": "linear",
             "lineWidth": 2,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
             },
-            "showPoints": "never",
-            "spanNulls": true,
+            "showPoints": "auto",
+            "spanNulls": 300000,
             "stacking": {
               "group": "A",
               "mode": "none"
@@ -904,7 +1119,17 @@
         }
       ],
       "title": "SQL latency (p50/p95/p99)",
-      "type": "timeseries"
+      "type": "timeseries",
+      "interval": "1m",
+      "transformations": [
+        {
+          "id": "renameByRegex",
+          "options": {
+            "regex": "^(.*?)p(\\d+)\\.0 duration_ms$",
+            "renamePattern": "$1p$2"
+          }
+        }
+      ]
     },
     {
       "datasource": {
@@ -930,14 +1155,14 @@
               "tooltip": false,
               "viz": false
             },
-            "lineInterpolation": "smooth",
+            "lineInterpolation": "linear",
             "lineWidth": 2,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
             },
-            "showPoints": "never",
-            "spanNulls": true,
+            "showPoints": "auto",
+            "spanNulls": 300000,
             "stacking": {
               "group": "A",
               "mode": "none"
@@ -1042,7 +1267,17 @@
         }
       ],
       "title": "DQ + Job latency (p95)",
-      "type": "timeseries"
+      "type": "timeseries",
+      "interval": "1m",
+      "transformations": [
+        {
+          "id": "renameByRegex",
+          "options": {
+            "regex": "^(.*?)p(\\d+)\\.0 duration_ms$",
+            "renamePattern": "$1p$2"
+          }
+        }
+      ]
     },
     {
       "collapsed": false,
