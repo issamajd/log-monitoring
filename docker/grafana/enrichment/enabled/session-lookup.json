@@ -49,7 +49,18 @@
             },
             "inspect": false
           },
-          "mappings": [],
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "—",
+                  "index": 0
+                }
+              }
+            }
+          ],
           "noValue": "No session row found.\n\nEither the SessionID is not in this deployment's CLIENTSESSIONLOG, or the session predates the application's retention window, or DB enrichment points at a different customer database.\n\nTelemetry-side context (user, operation, host) is still on the triage dashboards.",
           "thresholds": {
             "mode": "absolute",

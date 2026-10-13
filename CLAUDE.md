@@ -54,5 +54,5 @@ npm install && npm run docs:dev   # http://localhost:5173
 - Synthetic OTLP test payloads must use the attribute key `session.id`, not `session_id`; the parser promotes only OTel-convention names to top-level fields.
 - `OtlpJsonParserTests` must stay in `LogMonitoring.sln`; without it, solution builds never compile the consumers.
 - A file bind-mount inside a read-only directory mount can't create its own mountpoint, so the placeholder files under `docker/grafana/provisioning/` are required. Use `--force-recreate` after adding mounts.
-- Grafana's table panel only shows `noValue` for a zero-column result, so the session-lookup procedure returns an explanatory row when a session is not found.
+- Grafana's table panel only shows `noValue` for a zero-column result, so the session-lookup procedure returns an explanatory row when a session is not found. `noValue` also fills every NULL cell, so the session-lookup panel maps NULL to `—`; without that, a found session's empty fields (Company, OS user, Logout) showed the "No session row found" text.
 - Compose interpolates `$` inside unquoted `.env` values and silently mangles passwords.
