@@ -128,7 +128,7 @@
           },
           "refId": "A",
           "format": "time_series",
-          "rawSql": "SELECT time AS \"time\", host_name AS metric, value\nFROM metrics.raw_metrics\nWHERE metric_name = 'win_cpu_Percent_Processor_Time'\n  AND labels->>'instance' = '_Total'\n  AND time BETWEEN $__timeFrom() AND $__timeTo()\n  AND ($host='All' OR host_name = '$host')\nORDER BY time;",
+          "rawSql": "SELECT time AS \"time\", host_name AS metric, value\nFROM metrics.raw_metrics\nWHERE metric_name = 'win_cpu_Percent_Processor_Time'\n  AND labels->>'instance' = '_Total'\n  AND time BETWEEN $__timeFrom() AND $__timeTo()\n  AND ('${host:raw}'='All' OR host_name = '${host:raw}')\nORDER BY time;",
           "editorMode": "code",
           "rawQuery": true,
           "sql": {
@@ -233,7 +233,7 @@
           },
           "refId": "A",
           "format": "time_series",
-          "rawSql": "SELECT time AS \"time\", host_name AS metric, value\nFROM metrics.raw_metrics\nWHERE metric_name = 'win_mem_Available_Bytes'\n  AND time BETWEEN $__timeFrom() AND $__timeTo()\n  AND ($host='All' OR host_name = '$host')\nORDER BY time;",
+          "rawSql": "SELECT time AS \"time\", host_name AS metric, value\nFROM metrics.raw_metrics\nWHERE metric_name = 'win_mem_Available_Bytes'\n  AND time BETWEEN $__timeFrom() AND $__timeTo()\n  AND ('${host:raw}'='All' OR host_name = '${host:raw}')\nORDER BY time;",
           "editorMode": "code",
           "rawQuery": true,
           "sql": {
@@ -330,7 +330,7 @@
           },
           "refId": "A",
           "format": "time_series",
-          "rawSql": "SELECT time AS \"time\", host_name AS metric, value\nFROM metrics.raw_metrics\nWHERE metric_name = 'win_mem_Committed_Bytes'\n  AND time BETWEEN $__timeFrom() AND $__timeTo()\n  AND ($host='All' OR host_name = '$host')\nORDER BY time;",
+          "rawSql": "SELECT time AS \"time\", host_name AS metric, value\nFROM metrics.raw_metrics\nWHERE metric_name = 'win_mem_Committed_Bytes'\n  AND time BETWEEN $__timeFrom() AND $__timeTo()\n  AND ('${host:raw}'='All' OR host_name = '${host:raw}')\nORDER BY time;",
           "editorMode": "code",
           "rawQuery": true,
           "sql": {
@@ -436,7 +436,7 @@
           },
           "refId": "A",
           "format": "time_series",
-          "rawSql": "SELECT time AS \"time\", host_name || ' ' || COALESCE(labels->>'instance', labels->>'path','?') AS metric, value\nFROM metrics.raw_metrics\nWHERE metric_name = 'disk_used_percent'\n  AND time BETWEEN $__timeFrom() AND $__timeTo()\n  AND ($host='All' OR host_name = '$host')\n  AND ($disk_instance='All' OR labels->>'instance' = '$disk_instance')\nORDER BY time;",
+          "rawSql": "SELECT time AS \"time\", host_name || ' ' || COALESCE(labels->>'instance', labels->>'path','?') AS metric, value\nFROM metrics.raw_metrics\nWHERE metric_name = 'disk_used_percent'\n  AND time BETWEEN $__timeFrom() AND $__timeTo()\n  AND ('${host:raw}'='All' OR host_name = '${host:raw}')\n  AND ('${disk_instance:raw}'='All' OR labels->>'instance' = '${disk_instance:raw}')\nORDER BY time;",
           "editorMode": "code",
           "rawQuery": true,
           "sql": {
@@ -533,7 +533,7 @@
           },
           "refId": "A",
           "format": "time_series",
-          "rawSql": "SELECT time AS \"time\", host_name||' '||labels->>'instance'||' read' AS metric, value\nFROM metrics.raw_metrics WHERE metric_name='win_diskio_Disk_Read_Bytes_persec'\n  AND time BETWEEN $__timeFrom() AND $__timeTo() AND ($host='All' OR host_name='$host') ORDER BY time;",
+          "rawSql": "SELECT time AS \"time\", host_name||' '||(labels->>'instance')||' read' AS metric, value\nFROM metrics.raw_metrics WHERE metric_name='win_diskio_Disk_Read_Bytes_persec'\n  AND time BETWEEN $__timeFrom() AND $__timeTo() AND ('${host:raw}'='All' OR host_name='${host:raw}') ORDER BY time;",
           "editorMode": "code",
           "rawQuery": true,
           "sql": {
@@ -549,7 +549,7 @@
           },
           "refId": "B",
           "format": "time_series",
-          "rawSql": "SELECT time AS \"time\", host_name||' '||labels->>'instance'||' write' AS metric, value\nFROM metrics.raw_metrics WHERE metric_name='win_diskio_Disk_Write_Bytes_persec'\n  AND time BETWEEN $__timeFrom() AND $__timeTo() AND ($host='All' OR host_name='$host') ORDER BY time;",
+          "rawSql": "SELECT time AS \"time\", host_name||' '||(labels->>'instance')||' write' AS metric, value\nFROM metrics.raw_metrics WHERE metric_name='win_diskio_Disk_Write_Bytes_persec'\n  AND time BETWEEN $__timeFrom() AND $__timeTo() AND ('${host:raw}'='All' OR host_name='${host:raw}') ORDER BY time;",
           "editorMode": "code",
           "rawQuery": true,
           "sql": {
@@ -646,7 +646,7 @@
           },
           "refId": "A",
           "format": "time_series",
-          "rawSql": "SELECT time AS \"time\", host_name||' '||labels->>'instance'||' rx' AS metric, value\nFROM metrics.raw_metrics WHERE metric_name='win_net_Bytes_Received_persec'\n  AND time BETWEEN $__timeFrom() AND $__timeTo() AND ($host='All' OR host_name='$host') ORDER BY time;",
+          "rawSql": "SELECT time AS \"time\", host_name||' '||(labels->>'instance')||' rx' AS metric, value\nFROM metrics.raw_metrics WHERE metric_name='win_net_Bytes_Received_persec'\n  AND time BETWEEN $__timeFrom() AND $__timeTo() AND ('${host:raw}'='All' OR host_name='${host:raw}') ORDER BY time;",
           "editorMode": "code",
           "rawQuery": true,
           "sql": {
@@ -662,7 +662,7 @@
           },
           "refId": "B",
           "format": "time_series",
-          "rawSql": "SELECT time AS \"time\", host_name||' '||labels->>'instance'||' tx' AS metric, value\nFROM metrics.raw_metrics WHERE metric_name='win_net_Bytes_Sent_persec'\n  AND time BETWEEN $__timeFrom() AND $__timeTo() AND ($host='All' OR host_name='$host') ORDER BY time;",
+          "rawSql": "SELECT time AS \"time\", host_name||' '||(labels->>'instance')||' tx' AS metric, value\nFROM metrics.raw_metrics WHERE metric_name='win_net_Bytes_Sent_persec'\n  AND time BETWEEN $__timeFrom() AND $__timeTo() AND ('${host:raw}'='All' OR host_name='${host:raw}') ORDER BY time;",
           "editorMode": "code",
           "rawQuery": true,
           "sql": {
@@ -787,7 +787,7 @@
           },
           "refId": "A",
           "format": "table",
-          "rawSql": "SELECT labels->>'service_name' AS \"service\", host_name, value\nFROM metrics.latest_metrics\nWHERE metric_name = 'win_services_state'\n  AND ($host='All' OR host_name = '$host');",
+          "rawSql": "SELECT labels->>'service_name' AS \"service\", host_name, value\nFROM metrics.latest_metrics\nWHERE metric_name = 'win_services_state'\n  AND ('${host:raw}'='All' OR host_name = '${host:raw}');",
           "editorMode": "code",
           "rawQuery": true,
           "sql": {
@@ -1042,7 +1042,7 @@
           },
           "refId": "A",
           "format": "time_series",
-          "rawSql": "SELECT time AS \"time\", service_name||' '||labels->>'generation' AS metric, value\nFROM metrics.raw_metrics\nWHERE metric_name = 'process.runtime.dotnet.gc.heap.size'\n  AND time BETWEEN $__timeFrom() AND $__timeTo()\n  AND ($svc='All' OR service_name='$svc')\nORDER BY time;",
+          "rawSql": "SELECT time AS \"time\", service_name||' '||(labels->>'generation') AS metric, value\nFROM metrics.raw_metrics\nWHERE metric_name = 'process.runtime.dotnet.gc.heap.size'\n  AND time BETWEEN $__timeFrom() AND $__timeTo()\n  AND ('${svc:raw}'='All' OR service_name='${svc:raw}')\nORDER BY time;",
           "editorMode": "code",
           "rawQuery": true,
           "sql": {
@@ -1147,7 +1147,7 @@
           },
           "refId": "A",
           "format": "time_series",
-          "rawSql": "SELECT time AS \"time\", service_name AS metric, value\nFROM metrics.raw_metrics\nWHERE metric_name = 'process.runtime.dotnet.thread_pool.queue.length'\n  AND time BETWEEN $__timeFrom() AND $__timeTo()\n  AND ($svc='All' OR service_name='$svc')\nORDER BY time;",
+          "rawSql": "SELECT time AS \"time\", service_name AS metric, value\nFROM metrics.raw_metrics\nWHERE metric_name = 'process.runtime.dotnet.thread_pool.queue.length'\n  AND time BETWEEN $__timeFrom() AND $__timeTo()\n  AND ('${svc:raw}'='All' OR service_name='${svc:raw}')\nORDER BY time;",
           "editorMode": "code",
           "rawQuery": true,
           "sql": {
@@ -1244,7 +1244,7 @@
           },
           "refId": "A",
           "format": "time_series",
-          "rawSql": "SELECT time AS \"time\", service_name AS metric, value\nFROM metrics.raw_metrics\nWHERE metric_name = 'process.runtime.dotnet.monitor.lock_contention.count'\n  AND time BETWEEN $__timeFrom() AND $__timeTo()\n  AND ($svc='All' OR service_name='$svc')\nORDER BY time;",
+          "rawSql": "SELECT time AS \"time\", service_name AS metric, value\nFROM metrics.raw_metrics\nWHERE metric_name = 'process.runtime.dotnet.monitor.lock_contention.count'\n  AND time BETWEEN $__timeFrom() AND $__timeTo()\n  AND ('${svc:raw}'='All' OR service_name='${svc:raw}')\nORDER BY time;",
           "editorMode": "code",
           "rawQuery": true,
           "sql": {
@@ -1341,7 +1341,7 @@
           },
           "refId": "A",
           "format": "time_series",
-          "rawSql": "SELECT time AS \"time\", service_name AS metric, value\nFROM metrics.raw_metrics\nWHERE metric_name = 'process.runtime.dotnet.exceptions.count'\n  AND time BETWEEN $__timeFrom() AND $__timeTo()\n  AND ($svc='All' OR service_name='$svc')\nORDER BY time;",
+          "rawSql": "SELECT time AS \"time\", service_name AS metric, value\nFROM metrics.raw_metrics\nWHERE metric_name = 'process.runtime.dotnet.exceptions.count'\n  AND time BETWEEN $__timeFrom() AND $__timeTo()\n  AND ('${svc:raw}'='All' OR service_name='${svc:raw}')\nORDER BY time;",
           "editorMode": "code",
           "rawQuery": true,
           "sql": {
@@ -1438,7 +1438,7 @@
           },
           "refId": "A",
           "format": "time_series",
-          "rawSql": "SELECT time AS \"time\", service_name AS metric, value\nFROM metrics.raw_metrics\nWHERE metric_name = 'process.memory.usage'\n  AND time BETWEEN $__timeFrom() AND $__timeTo()\n  AND ($svc='All' OR service_name='$svc')\nORDER BY time;",
+          "rawSql": "SELECT time AS \"time\", service_name AS metric, value\nFROM metrics.raw_metrics\nWHERE metric_name = 'process.memory.usage'\n  AND time BETWEEN $__timeFrom() AND $__timeTo()\n  AND ('${svc:raw}'='All' OR service_name='${svc:raw}')\nORDER BY time;",
           "editorMode": "code",
           "rawQuery": true,
           "sql": {

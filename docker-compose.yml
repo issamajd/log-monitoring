@@ -320,6 +320,8 @@ services:
                   "db_operation": { "type": "keyword" },
                   "sql_danger_flags": { "type": "keyword" },
                   "sql_id": { "type": "keyword" },
+                  "sql_fingerprint": { "type": "keyword" },
+                  "db_statement_preview": { "type": "keyword" },
                   "sql_transaction_id": { "type": "keyword" },
                   "db_system": { "type": "keyword" },
                   "db_name": { "type": "keyword" },

@@ -2,6 +2,7 @@ using Google.Protobuf;
 using System.Text;
 using LogMonitoring.Consumers.Logs.Services;
 using LogMonitoring.Consumers.Metrics.Services;
+using LogMonitoring.Consumers.Traces.Models;
 using LogMonitoring.Consumers.Traces.Services;
 using Microsoft.Extensions.Logging.Abstractions;
 using OpenTelemetry.Proto.Collector.Logs.V1;
@@ -28,7 +29,8 @@ internal static class Program
             ("Parse OTLP JSON metrics", ParseOtlpJsonMetrics),
             ("Parse OTLP JSON traces", ParseOtlpJsonTraces),
             ("Collector hex trace/span IDs survive parsing", ParseCollectorHexIds),
-            ("Failure details are promoted for search", ParseFailureDetails)
+            ("Failure details are promoted for search", ParseFailureDetails),
+            ("SQL executions group by statement fingerprint", FingerprintSqlStatements)
         };
 
         foreach (var (name, test) in tests)
@@ -190,6 +192,63 @@ internal static class Program
         AssertEqual((long)(TimestampNanoseconds / 1_000), records[0].StartTimeUs, "Span start time (us)");
         AssertEqual("SELECT", records[0].DbOperation, "Span database operation");
         AssertEqual("session-42", records[0].SessionId, "Span session ID");
+    }
+
+    /// <summary>
+    /// sql_id is new for every execution, so slow-SQL panels group by sql_fingerprint instead:
+    /// the same statement must hash the same however it is spaced, and a different one must not.
+    /// </summary>
+    private static void FingerprintSqlStatements()
+    {
+        const string Statement = "SELECT S.NAME AS \"NAME\", S.VALUE AS \"VALUE\" FROM SYSTEMFLAGS S WHERE (S.NAME = @fp1e)";
+
+        static Span SqlSpan(byte id, string? statement)
+        {
+            Span span = new Span
+            {
+                TraceId = ByteString.CopyFrom(Enumerable.Range(1, 16).Select(value => (byte)value).ToArray()),
+                SpanId = ByteString.CopyFrom(Enumerable.Repeat(id, 8).ToArray()),
+                Name = "sql.query",
+                StartTimeUnixNano = TimestampNanoseconds,
+                EndTimeUnixNano = TimestampNanoseconds + 1_000_000
+            };
+            if (statement != null)
+                span.Attributes.Add(Attribute("db.statement", statement));
+            return span;
+        }
+
+        ExportTraceServiceRequest request = new ExportTraceServiceRequest
+        {
+            ResourceSpans =
+            {
+                new ResourceSpans
+                {
+                    Resource = CreateResource(),
+                    ScopeSpans =
+                    {
+                        new ScopeSpans
+                        {
+                            Spans =
+                            {
+                                SqlSpan(1, Statement),
+                                SqlSpan(2, "  " + Statement.Replace(" FROM ", "\r\n  FROM ") + "\n"),
+                                SqlSpan(3, Statement.Replace("SYSTEMFLAGS", "USERS")),
+                                SqlSpan(4, null)
+                            }
+                        }
+                    }
+                }
+            }
+        };
+
+        OtlpTracesParser parser = new OtlpTracesParser(NullLogger<OtlpTracesParser>.Instance);
+        List<SpanRecord> records = parser.Parse(ToJsonBytes(request));
+
+        AssertEqual(16, records[0].SqlFingerprint?.Length ?? 0, "Fingerprint length");
+        AssertEqual(records[0].SqlFingerprint, records[1].SqlFingerprint, "Fingerprint ignores whitespace");
+        AssertEqual(false, records[0].SqlFingerprint == records[2].SqlFingerprint, "Different statements differ");
+        AssertEqual("SELECT … FROM SYSTEMFLAGS S WHERE (S.NAME = @fp1e)", records[0].DbStatementPreview, "Statement preview");
+        AssertEqual(null, records[3].SqlFingerprint, "No fingerprint without a statement");
     }
 
     /// <summary>

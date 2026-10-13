@@ -1013,6 +1013,10 @@
                 "value": {
                   "mode": "thresholds"
                 }
+              },
+              {
+                "id": "custom.width",
+                "value": 90
               }
             ]
           },
@@ -1058,24 +1062,44 @@
                 "value": {
                   "mode": "thresholds"
                 }
+              },
+              {
+                "id": "custom.width",
+                "value": 90
               }
             ]
           },
           {
             "matcher": {
               "id": "byName",
-              "options": "sql_id"
+              "options": "sql_fingerprint"
             },
             "properties": [
               {
                 "id": "links",
                 "value": [
                   {
-                    "title": "Filter by this sql_id",
-                    "url": "/d/sql-insight/sql-insight?var-sql_id=${__value.raw}&${__url_time_range}",
-                    "targetBlank": false
+                    "title": "Explore every execution of this statement",
+                    "url": "/explore?left=%7B%22datasource%22:%22es-traces%22,%22queries%22:%5B%7B%22refId%22:%22A%22,%22query%22:%22sql_fingerprint:%5C%22${__value.raw}%5C%22%22,%22metrics%22:%5B%7B%22id%22:%221%22,%22type%22:%22raw_data%22,%22settings%22:%7B%22size%22:%22500%22%7D%7D%5D,%22bucketAggs%22:%5B%5D,%22timeField%22:%22%40timestamp%22%7D%5D,%22range%22:%7B%22from%22:%22${__from}%22,%22to%22:%22${__to}%22%7D%7D",
+                    "targetBlank": true
                   }
                 ]
+              },
+              {
+                "id": "custom.width",
+                "value": 150
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Count"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 80
               }
             ]
           }
@@ -1135,13 +1159,24 @@
           ],
           "bucketAggs": [
             {
-              "id": "4",
+              "id": "5",
               "type": "terms",
-              "field": "sql_id",
+              "field": "sql_fingerprint",
               "settings": {
                 "size": "25",
                 "order": "desc",
                 "orderBy": "1[95]",
+                "min_doc_count": "1"
+              }
+            },
+            {
+              "id": "6",
+              "type": "terms",
+              "field": "db_statement_preview",
+              "settings": {
+                "size": "1",
+                "order": "desc",
+                "orderBy": "_count",
                 "min_doc_count": "1"
               }
             }
@@ -1149,21 +1184,26 @@
           "timeField": "@timestamp"
         }
       ],
-      "title": "Slowest SQL by sql_id",
+      "title": "Slowest SQL statements",
       "type": "table",
       "transformations": [
         {
           "id": "organize",
           "options": {
             "excludeByName": {},
-            "indexByName": {},
+            "indexByName": {
+              "sql_fingerprint": 0,
+              "db_statement_preview": 1
+            },
             "renameByName": {
               "p95.0 duration_ms": "p95",
-              "Max": "max"
+              "Max": "max",
+              "db_statement_preview": "statement"
             }
           }
         }
-      ]
+      ],
+      "description": "One row per SQL statement shape (sql_fingerprint: a hash of the literal-masked statement), so Count is how many times it ran. sql_id is per execution and cannot group. Click a fingerprint to explore every execution, each with its sql_id, session and trace. Spans stored before the fingerprint existed are not counted."
     },
     {
       "datasource": {
@@ -1424,22 +1464,22 @@
                 "axisLabel": "",
                 "axisPlacement": "auto",
                 "barAlignment": 0,
-                "drawStyle": "line",
-                "fillOpacity": 15,
+                "drawStyle": "bars",
+                "fillOpacity": 80,
                 "gradientMode": "none",
                 "hideFrom": {
                   "legend": false,
                   "tooltip": false,
                   "viz": false
                 },
-                "lineInterpolation": "smooth",
+                "lineInterpolation": "linear",
                 "lineWidth": 2,
                 "pointSize": 5,
                 "scaleDistribution": {
                   "type": "linear"
                 },
                 "showPoints": "never",
-                "spanNulls": true,
+                "spanNulls": false,
                 "stacking": {
                   "group": "A",
                   "mode": "none"
@@ -1492,7 +1532,7 @@
               },
               "refId": "A",
               "format": "time_series",
-              "rawSql": "SELECT time_bucket('1 minute', time) AS \"time\",\n       COALESCE(SUM(value),0) AS \"db_errors\"\nFROM metrics.raw_metrics\nWHERE metric_name = 'app.db.errors.total'\n  AND time BETWEEN $__timeFrom() AND $__timeTo()\n  AND ($service='*' OR service_name = '$service')\nGROUP BY 1 ORDER BY 1;",
+              "rawSql": "SELECT time_bucket('1 minute', time) AS \"time\",\n       dq_name AS metric,\n       SUM(increase) AS \"errors\"\nFROM (\n  SELECT time,\n         labels->>'dq.name' AS dq_name,\n         -- Cumulative counter: the increase is the difference from the series' previous export.\n         -- The SDK exports every minute while the process lives, so a drop or a long gap means the\n         -- process restarted and its running total began again from 0.\n         CASE WHEN LAG(time) OVER w IS NULL\n                OR time - LAG(time) OVER w > INTERVAL '5 minutes'\n                OR value < LAG(value) OVER w\n              THEN value\n              ELSE value - LAG(value) OVER w END AS increase\n  FROM metrics.raw_metrics\n  WHERE metric_name = 'rndfw.dq.errors'\n    AND time BETWEEN $__timeFrom()::timestamptz - INTERVAL '1 day' AND $__timeTo()\n    AND ('${service:raw}' = '*' OR service_name = '${service:raw}')\n  WINDOW w AS (PARTITION BY service_name, host_name, labels ORDER BY time)\n) s\nWHERE time BETWEEN $__timeFrom() AND $__timeTo()\nGROUP BY 1, 2 ORDER BY 1;",
               "editorMode": "code",
               "rawQuery": true,
               "sql": {
@@ -1502,12 +1542,12 @@
               }
             }
           ],
-          "title": "DB query error rate",
+          "title": "DB query errors by data query",
           "type": "timeseries",
-          "description": "APP-DEPENDENT: reads empty until rndfwcore log-monitoring branch emits app.db.errors.total."
+          "description": "Failed data-query executions per minute, from the rndfw.dq.errors counter, one line per DQ. The counter is cumulative (each export repeats the running total since the process started), so this sums the increase between exports and treats a drop or a gap of over 5 minutes as a restart."
         }
       ],
-      "title": "APP-DEPENDENT SQL metrics (TimescaleDB, empty until app merges)",
+      "title": "DB errors (TimescaleDB metrics)",
       "type": "row"
     }
   ],
