@@ -199,9 +199,6 @@ public class OtlpTracesParser : ITracesParser
                     case "job.queue":
                         record.JobQueue = value.ToString();
                         break;
-                    case "job.run_id":
-                        record.JobRunId = value.ToString();
-                        break;
                     case "job.status":
                         record.JobStatus = value.ToString();
                         break;
@@ -245,12 +242,15 @@ public class OtlpTracesParser : ITracesParser
             }
         }
 
-        // Dashboards filter correlation IDs with `field:*$var*`, which matches an empty string but
-        // not a missing field. Writing "" keeps spans without a session or user (a failed login, a
-        // scheduler job) visible while the filter box is empty.
+        // Dashboards filter correlation IDs with `field:*$var*` and host/environment with `field:$var`
+        // ("All" is `*`). A wildcard matches an empty string but not a missing field, so writing ""
+        // keeps spans without a session or user (a failed login, a scheduler job), or from an app
+        // that sets no deployment.environment, visible while the filters are open.
         record.SessionId ??= string.Empty;
         record.OperationId ??= string.Empty;
         record.UserName ??= string.Empty;
+        record.HostName ??= string.Empty;
+        record.Environment ??= string.Empty;
 
         if (!string.IsNullOrWhiteSpace(record.DbStatement))
         {

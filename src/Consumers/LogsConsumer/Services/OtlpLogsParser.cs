@@ -163,13 +163,16 @@ public class OtlpLogsParser : ILogsParser
             }
         }
 
-        // Dashboards filter correlation IDs with `field:*$var*`, which matches an empty string but
-        // not a missing field. Writing "" keeps records emitted outside a session or span visible
-        // while the filter box is empty.
+        // Dashboards filter correlation IDs with `field:*$var*` and host/environment with `field:$var`
+        // ("All" is `*`). A wildcard matches an empty string but not a missing field, so writing ""
+        // keeps records emitted outside a session or span, or by an app that sets no
+        // deployment.environment, visible while the filters are open.
         record.SessionId ??= string.Empty;
         record.OperationId ??= string.Empty;
         record.UserId ??= string.Empty;
         record.TraceId ??= string.Empty;
+        record.HostName ??= string.Empty;
+        record.Environment ??= string.Empty;
 
         return record;
     }

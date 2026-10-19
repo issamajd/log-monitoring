@@ -192,6 +192,7 @@ internal static class Program
         AssertEqual((long)(TimestampNanoseconds / 1_000), records[0].StartTimeUs, "Span start time (us)");
         AssertEqual("SELECT", records[0].DbOperation, "Span database operation");
         AssertEqual("session-42", records[0].SessionId, "Span session ID");
+        AssertEqual("development", records[0].Environment, "Span environment");
     }
 
     /// <summary>
@@ -301,6 +302,11 @@ internal static class Program
         AssertEqual(SpanId, spans[0].SpanId, "Span span ID");
         AssertEqual(ParentSpanId, spans[0].ParentSpanId, "Span parent span ID");
 
+        // No host.name or deployment.environment on the resource: stored as "" so the dashboards'
+        // `host_name:$host` / `environment:$env` filters (All = `*`) still match the span.
+        AssertEqual("", spans[0].HostName, "Span host name without host.name");
+        AssertEqual("", spans[0].Environment, "Span environment without deployment.environment");
+
         string logsJson = $$"""
         {
           "resourceLogs": [{
@@ -350,6 +356,8 @@ internal static class Program
         AssertEqual("", uncorrelated[0].TraceId, "Uncorrelated trace ID");
         AssertEqual(null, uncorrelated[0].SpanId, "Uncorrelated span ID");
         AssertEqual("", uncorrelated[0].SessionId, "Uncorrelated session ID");
+        AssertEqual("", uncorrelated[0].HostName, "Resource-less log host name");
+        AssertEqual("", uncorrelated[0].Environment, "Resource-less log environment");
     }
 
     /// <summary>

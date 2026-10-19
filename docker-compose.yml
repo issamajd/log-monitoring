@@ -328,7 +328,6 @@ services:
                   "db_name": { "type": "keyword" },
                   "job_name": { "type": "keyword" },
                   "job_queue": { "type": "keyword" },
-                  "job_run_id": { "type": "keyword" },
                   "job_status": { "type": "keyword" },
                   "transport": { "type": "keyword" },
                   "client_address": { "type": "keyword" },

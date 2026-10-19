@@ -255,12 +255,6 @@ public class SpanRecord
     public string? JobQueue { get; set; }
 
     /// <summary>
-    /// Job run ID if available.
-    /// </summary>
-    [JsonPropertyName("job_run_id")]
-    public string? JobRunId { get; set; }
-
-    /// <summary>
     /// Job status if available.
     /// </summary>
     [JsonPropertyName("job_status")]

@@ -15,7 +15,7 @@
       }
     ]
   },
-  "description": "Host/environment filters tolerate missing fields until the app emits host.name resource attributes.",
+  "description": "Host/environment filters also match records without those attributes: the consumers store them as empty strings.",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
@@ -107,7 +107,7 @@
             "uid": "es-logs"
           },
           "refId": "A",
-          "query": "level:(ERROR OR FATAL) AND environment:$env AND service_name:$service AND (host_name:$host OR (NOT _exists_:host_name)) AND message:*$search* AND session_id:*$session_id* AND trace_id:*$trace_id* AND user_id:*$user*",
+          "query": "level:(ERROR OR FATAL) AND environment:$env AND service_name:$service AND host_name:$host AND message:*$search* AND session_id:*$session_id* AND trace_id:*$trace_id* AND user_id:*$user*",
           "alias": "",
           "metrics": [
             {
@@ -188,7 +188,7 @@
             "uid": "es-logs"
           },
           "refId": "A",
-          "query": "level:FATAL AND environment:$env AND service_name:$service AND (host_name:$host OR (NOT _exists_:host_name)) AND message:*$search* AND session_id:*$session_id* AND trace_id:*$trace_id* AND user_id:*$user*",
+          "query": "level:FATAL AND environment:$env AND service_name:$service AND host_name:$host AND message:*$search* AND session_id:*$session_id* AND trace_id:*$trace_id* AND user_id:*$user*",
           "alias": "",
           "metrics": [
             {
@@ -273,7 +273,7 @@
             "uid": "es-traces"
           },
           "refId": "A",
-          "query": "error:true AND environment:$env AND service_name:$service AND (host_name:$host OR (NOT _exists_:host_name)) AND session_id:*$session_id* AND operation_id:*$operation_id* AND trace_id:*$trace_id* AND user_name:*$user*",
+          "query": "error:true AND environment:$env AND service_name:$service AND host_name:$host AND session_id:*$session_id* AND operation_id:*$operation_id* AND trace_id:*$trace_id* AND user_name:*$user*",
           "alias": "",
           "metrics": [
             {
@@ -350,7 +350,7 @@
             "uid": "es-logs"
           },
           "refId": "A",
-          "query": "level:(ERROR OR FATAL) AND environment:$env AND service_name:$service AND (host_name:$host OR (NOT _exists_:host_name)) AND level:(${level:lucene}) AND message:*$search* AND session_id:*$session_id* AND trace_id:*$trace_id* AND user_id:*$user* AND NOT session_id:\"\"",
+          "query": "level:(ERROR OR FATAL) AND environment:$env AND service_name:$service AND host_name:$host AND level:(${level:lucene}) AND message:*$search* AND session_id:*$session_id* AND trace_id:*$trace_id* AND user_id:*$user* AND NOT session_id:\"\"",
           "alias": "",
           "metrics": [
             {
@@ -472,7 +472,7 @@
             "uid": "es-logs"
           },
           "refId": "A",
-          "query": "environment:$env AND service_name:$service AND (host_name:$host OR (NOT _exists_:host_name)) AND level:(${level:lucene}) AND message:*$search* AND session_id:*$session_id* AND trace_id:*$trace_id* AND user_id:*$user*",
+          "query": "environment:$env AND service_name:$service AND host_name:$host AND level:(${level:lucene}) AND message:*$search* AND session_id:*$session_id* AND trace_id:*$trace_id* AND user_id:*$user*",
           "alias": "",
           "metrics": [
             {
@@ -591,7 +591,7 @@
             "uid": "es-traces"
           },
           "refId": "A",
-          "query": "error:true AND environment:$env AND service_name:$service AND (host_name:$host OR (NOT _exists_:host_name)) AND session_id:*$session_id* AND operation_id:*$operation_id* AND trace_id:*$trace_id* AND user_name:*$user*",
+          "query": "error:true AND environment:$env AND service_name:$service AND host_name:$host AND session_id:*$session_id* AND operation_id:*$operation_id* AND trace_id:*$trace_id* AND user_name:*$user*",
           "alias": "",
           "metrics": [
             {
@@ -821,7 +821,7 @@
             "uid": "es-logs"
           },
           "refId": "A",
-          "query": "level:ERROR AND _exists_:error_kind AND environment:$env AND service_name:$service AND (host_name:$host OR (NOT _exists_:host_name)) AND message:*$search* AND session_id:*$session_id* AND trace_id:*$trace_id* AND user_id:*$user*",
+          "query": "level:ERROR AND _exists_:error_kind AND environment:$env AND service_name:$service AND host_name:$host AND message:*$search* AND session_id:*$session_id* AND trace_id:*$trace_id* AND user_id:*$user*",
           "alias": "",
           "metrics": [
             {
@@ -1055,7 +1055,7 @@
             "uid": "es-logs"
           },
           "refId": "A",
-          "query": "environment:$env AND service_name:$service AND (host_name:$host OR (NOT _exists_:host_name)) AND level:(${level:lucene}) AND message:*$search* AND session_id:*$session_id* AND trace_id:*$trace_id* AND user_id:*$user*",
+          "query": "environment:$env AND service_name:$service AND host_name:$host AND level:(${level:lucene}) AND message:*$search* AND session_id:*$session_id* AND trace_id:*$trace_id* AND user_id:*$user*",
           "alias": "",
           "metrics": [
             {
@@ -1190,7 +1190,7 @@
             "uid": "es-logs"
           },
           "refId": "A",
-          "query": "_exists_:exception.type AND environment:$env AND service_name:$service AND (host_name:$host OR (NOT _exists_:host_name)) AND level:(${level:lucene}) AND message:*$search* AND session_id:*$session_id* AND trace_id:*$trace_id* AND user_id:*$user*",
+          "query": "_exists_:exception.type AND environment:$env AND service_name:$service AND host_name:$host AND level:(${level:lucene}) AND message:*$search* AND session_id:*$session_id* AND trace_id:*$trace_id* AND user_id:*$user*",
           "alias": "",
           "metrics": [
             {
@@ -1504,7 +1504,7 @@
         "definition": "{\"find\":\"terms\",\"field\":\"environment\",\"size\":50}",
         "query": "{\"find\":\"terms\",\"field\":\"environment\",\"size\":50}",
         "refresh": 2,
-        "regex": "",
+        "regex": "/.+/",
         "sort": 1,
         "multi": false,
         "includeAll": true,
@@ -1554,7 +1554,7 @@
         "definition": "{\"find\":\"terms\",\"field\":\"host_name\",\"size\":100}",
         "query": "{\"find\":\"terms\",\"field\":\"host_name\",\"size\":100}",
         "refresh": 2,
-        "regex": "",
+        "regex": "/.+/",
         "sort": 1,
         "multi": false,
         "includeAll": true,

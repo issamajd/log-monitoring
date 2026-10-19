@@ -321,9 +321,9 @@ Compose interpolates `$VAR` inside unquoted values and silently mangles password
 
 The two enrichment mount targets — `docker/grafana/provisioning/datasources/session-enrichment.yaml` and `docker/grafana/provisioning/dashboards/json/session-lookup.json` — must exist as committed placeholder files: a file bind-mount inside the read-only provisioning mount can only cover an existing file, never create one. Deleting them breaks Grafana startup in both modes. When flipping enrichment on a running stack, use `docker compose up -d --force-recreate grafana` so the changed mount takes effect.
 
-### `host.name` missing from rndfwcore telemetry
+### Missing `host.name` or `deployment.environment`
 
-The app does not yet emit a `host.name` resource attribute, so its documents have no `host_name` field. Dashboards tolerate that with the Lucene filter `(host_name:$host OR (NOT _exists_:host_name))` — the inner parentheses are load-bearing; `a OR NOT b` without them matches nothing. The proper fix is app-side, on the `log-monitoring` branch.
+`rndfwcore` sets `host.name` to the machine name; other emitters may not. The collector inserts `deployment.environment` from `DEPLOYMENT_ENV` only when the app sends none (rndfwcore's own `DeploymentEnvironment` setting wins), so it is only missing if the collector's `resource` processor is bypassed. The logs and traces consumers store a missing value as `""`, so the dashboards' `host_name:$host` / `environment:$env` filters (All = `*`, which matches `""`) still show those records. Documents indexed from rndfwcore builds without `host.name` have no `host_name` field and drop out of those dashboards until they age out.
 
 ### Kafka from the host is port 9093, not 9092
 
