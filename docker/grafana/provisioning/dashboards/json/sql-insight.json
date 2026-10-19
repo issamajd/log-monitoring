@@ -15,7 +15,7 @@
       }
     ]
   },
-  "description": "Host/environment filters tolerate missing fields until the app emits host.name resource attributes.",
+  "description": "Host/environment filters also match records without those attributes: the consumers store them as empty strings.",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
@@ -107,7 +107,7 @@
             "uid": "es-traces"
           },
           "refId": "A",
-          "query": "_exists_:sql_danger_flags AND NOT sql_danger_flags:none AND NOT sql_danger_flags:\"\" AND _exists_:db_operation AND environment:$env AND service_name:$service AND (host_name:$host OR (NOT _exists_:host_name)) AND db_name:$db_name AND db_operation:$db_operation AND sql_id:*$sql_id* AND sql_transaction_id:*$sql_transaction_id* AND session_id:*$session_id*",
+          "query": "_exists_:sql_danger_flags AND NOT sql_danger_flags:none AND NOT sql_danger_flags:\"\" AND _exists_:db_operation AND environment:$env AND service_name:$service AND host_name:$host AND db_name:$db_name AND db_operation:$db_operation AND sql_id:*$sql_id* AND sql_transaction_id:*$sql_transaction_id* AND session_id:*$session_id*",
           "alias": "",
           "metrics": [
             {
@@ -188,7 +188,7 @@
             "uid": "es-traces"
           },
           "refId": "A",
-          "query": "_exists_:sql_danger_flags AND NOT sql_danger_flags:none AND NOT sql_danger_flags:\"\" AND (db_operation:delete OR db_operation:update) AND _exists_:db_operation AND environment:$env AND service_name:$service AND (host_name:$host OR (NOT _exists_:host_name)) AND db_name:$db_name AND db_operation:$db_operation AND sql_id:*$sql_id* AND sql_transaction_id:*$sql_transaction_id* AND session_id:*$session_id*",
+          "query": "_exists_:sql_danger_flags AND NOT sql_danger_flags:none AND NOT sql_danger_flags:\"\" AND (db_operation:delete OR db_operation:update) AND _exists_:db_operation AND environment:$env AND service_name:$service AND host_name:$host AND db_name:$db_name AND db_operation:$db_operation AND sql_id:*$sql_id* AND sql_transaction_id:*$sql_transaction_id* AND session_id:*$session_id*",
           "alias": "",
           "metrics": [
             {
@@ -273,7 +273,7 @@
             "uid": "es-traces"
           },
           "refId": "A",
-          "query": "(db_operation:delete OR db_operation:update OR db_operation:insert) AND _exists_:db_operation AND environment:$env AND service_name:$service AND (host_name:$host OR (NOT _exists_:host_name)) AND db_name:$db_name AND db_operation:$db_operation AND sql_id:*$sql_id* AND sql_transaction_id:*$sql_transaction_id* AND session_id:*$session_id*",
+          "query": "(db_operation:delete OR db_operation:update OR db_operation:insert) AND _exists_:db_operation AND environment:$env AND service_name:$service AND host_name:$host AND db_name:$db_name AND db_operation:$db_operation AND sql_id:*$sql_id* AND sql_transaction_id:*$sql_transaction_id* AND session_id:*$session_id*",
           "alias": "",
           "metrics": [
             {
@@ -350,7 +350,7 @@
             "uid": "es-traces"
           },
           "refId": "A",
-          "query": "_exists_:sql_danger_flags AND NOT sql_danger_flags:none AND NOT sql_danger_flags:\"\" AND _exists_:db_operation AND environment:$env AND service_name:$service AND (host_name:$host OR (NOT _exists_:host_name)) AND db_name:$db_name AND db_operation:$db_operation AND sql_id:*$sql_id* AND sql_transaction_id:*$sql_transaction_id* AND session_id:*$session_id*",
+          "query": "_exists_:sql_danger_flags AND NOT sql_danger_flags:none AND NOT sql_danger_flags:\"\" AND _exists_:db_operation AND environment:$env AND service_name:$service AND host_name:$host AND db_name:$db_name AND db_operation:$db_operation AND sql_id:*$sql_id* AND sql_transaction_id:*$sql_transaction_id* AND session_id:*$session_id*",
           "alias": "",
           "metrics": [
             {
@@ -641,7 +641,7 @@
             "uid": "es-traces"
           },
           "refId": "A",
-          "query": "_exists_:sql_danger_flags AND NOT sql_danger_flags:none AND NOT sql_danger_flags:\"\" AND _exists_:db_operation AND environment:$env AND service_name:$service AND (host_name:$host OR (NOT _exists_:host_name)) AND db_name:$db_name AND db_operation:$db_operation AND sql_id:*$sql_id* AND sql_transaction_id:*$sql_transaction_id* AND session_id:*$session_id*",
+          "query": "_exists_:sql_danger_flags AND NOT sql_danger_flags:none AND NOT sql_danger_flags:\"\" AND _exists_:db_operation AND environment:$env AND service_name:$service AND host_name:$host AND db_name:$db_name AND db_operation:$db_operation AND sql_id:*$sql_id* AND sql_transaction_id:*$sql_transaction_id* AND session_id:*$session_id*",
           "alias": "",
           "metrics": [
             {
@@ -789,7 +789,7 @@
             "uid": "es-traces"
           },
           "refId": "A",
-          "query": "_exists_:db_operation AND environment:$env AND service_name:$service AND (host_name:$host OR (NOT _exists_:host_name)) AND db_name:$db_name AND db_operation:$db_operation AND sql_id:*$sql_id* AND sql_transaction_id:*$sql_transaction_id* AND session_id:*$session_id*",
+          "query": "_exists_:db_operation AND environment:$env AND service_name:$service AND host_name:$host AND db_name:$db_name AND db_operation:$db_operation AND sql_id:*$sql_id* AND sql_transaction_id:*$sql_transaction_id* AND session_id:*$session_id*",
           "alias": "",
           "metrics": [
             {
@@ -905,7 +905,7 @@
             "uid": "es-traces"
           },
           "refId": "A",
-          "query": "_exists_:db_operation AND environment:$env AND service_name:$service AND (host_name:$host OR (NOT _exists_:host_name)) AND db_name:$db_name AND db_operation:$db_operation AND sql_id:*$sql_id* AND sql_transaction_id:*$sql_transaction_id* AND session_id:*$session_id*",
+          "query": "_exists_:db_operation AND environment:$env AND service_name:$service AND host_name:$host AND db_name:$db_name AND db_operation:$db_operation AND sql_id:*$sql_id* AND sql_transaction_id:*$sql_transaction_id* AND session_id:*$session_id*",
           "alias": "",
           "metrics": [
             {
@@ -1134,7 +1134,7 @@
             "uid": "es-traces"
           },
           "refId": "A",
-          "query": "_exists_:db_operation AND environment:$env AND service_name:$service AND (host_name:$host OR (NOT _exists_:host_name)) AND db_name:$db_name AND db_operation:$db_operation AND sql_id:*$sql_id* AND sql_transaction_id:*$sql_transaction_id* AND session_id:*$session_id*",
+          "query": "_exists_:db_operation AND environment:$env AND service_name:$service AND host_name:$host AND db_name:$db_name AND db_operation:$db_operation AND sql_id:*$sql_id* AND sql_transaction_id:*$sql_transaction_id* AND session_id:*$session_id*",
           "alias": "",
           "metrics": [
             {
@@ -1256,7 +1256,7 @@
             "uid": "es-traces"
           },
           "refId": "A",
-          "query": "_exists_:db_operation AND environment:$env AND service_name:$service AND (host_name:$host OR (NOT _exists_:host_name)) AND db_name:$db_name AND db_operation:$db_operation AND sql_id:*$sql_id* AND sql_transaction_id:*$sql_transaction_id* AND session_id:*$session_id*",
+          "query": "_exists_:db_operation AND environment:$env AND service_name:$service AND host_name:$host AND db_name:$db_name AND db_operation:$db_operation AND sql_id:*$sql_id* AND sql_transaction_id:*$sql_transaction_id* AND session_id:*$session_id*",
           "alias": "",
           "metrics": [
             {
@@ -1389,7 +1389,7 @@
             "uid": "es-traces"
           },
           "refId": "A",
-          "query": "_exists_:db_operation AND environment:$env AND service_name:$service AND (host_name:$host OR (NOT _exists_:host_name)) AND db_name:$db_name AND db_operation:$db_operation AND sql_id:*$sql_id* AND sql_transaction_id:*$sql_transaction_id* AND session_id:*$session_id*",
+          "query": "_exists_:db_operation AND environment:$env AND service_name:$service AND host_name:$host AND db_name:$db_name AND db_operation:$db_operation AND sql_id:*$sql_id* AND sql_transaction_id:*$sql_transaction_id* AND session_id:*$session_id*",
           "alias": "",
           "metrics": [
             {
@@ -1573,7 +1573,7 @@
         "definition": "{\"find\":\"terms\",\"field\":\"environment\",\"size\":50}",
         "query": "{\"find\":\"terms\",\"field\":\"environment\",\"size\":50}",
         "refresh": 2,
-        "regex": "",
+        "regex": "/.+/",
         "sort": 1,
         "multi": false,
         "includeAll": true,
@@ -1623,7 +1623,7 @@
         "definition": "{\"find\":\"terms\",\"field\":\"host_name\",\"size\":100}",
         "query": "{\"find\":\"terms\",\"field\":\"host_name\",\"size\":100}",
         "refresh": 2,
-        "regex": "",
+        "regex": "/.+/",
         "sort": 1,
         "multi": false,
         "includeAll": true,
