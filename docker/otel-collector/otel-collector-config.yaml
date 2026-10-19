@@ -20,9 +20,11 @@ processors:
   # Add resource attributes
   resource:
     attributes:
+      # insert, not upsert: an app that sets its own deployment.environment (rndfwcore's
+      # Telemetry/DeploymentEnvironment) keeps it; DEPLOYMENT_ENV only fills in a missing one.
       - key: deployment.environment
         value: ${env:DEPLOYMENT_ENV}
-        action: upsert
+        action: insert
       - key: service.namespace
         value: ${env:SERVICE_NAMESPACE}
         action: upsert

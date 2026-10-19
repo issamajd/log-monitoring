@@ -323,7 +323,7 @@ The two enrichment mount targets — `docker/grafana/provisioning/datasources/se
 
 ### Missing `host.name` or `deployment.environment`
 
-`rndfwcore` sets `host.name` to the machine name; other emitters may not. `deployment.environment` is upserted by the collector from `DEPLOYMENT_ENV`, so it overrides the app's own `DeploymentEnvironment` setting and is only missing if the collector's `resource` processor is bypassed. The logs and traces consumers store a missing value as `""`, so the dashboards' `host_name:$host` / `environment:$env` filters (All = `*`, which matches `""`) still show those records. Documents indexed from rndfwcore builds without `host.name` have no `host_name` field and drop out of those dashboards until they age out.
+`rndfwcore` sets `host.name` to the machine name; other emitters may not. The collector inserts `deployment.environment` from `DEPLOYMENT_ENV` only when the app sends none (rndfwcore's own `DeploymentEnvironment` setting wins), so it is only missing if the collector's `resource` processor is bypassed. The logs and traces consumers store a missing value as `""`, so the dashboards' `host_name:$host` / `environment:$env` filters (All = `*`, which matches `""`) still show those records. Documents indexed from rndfwcore builds without `host.name` have no `host_name` field and drop out of those dashboards until they age out.
 
 ### Kafka from the host is port 9093, not 9092
 
